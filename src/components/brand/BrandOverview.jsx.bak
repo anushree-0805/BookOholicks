@@ -1,0 +1,74 @@
+import { TrendingUp, Users, Package, DollarSign } from 'lucide-react';
+
+const BrandOverview = () => {
+  // Mock data - will be replaced with API calls
+  const stats = [
+    { label: 'Total Campaigns', value: '12', change: '+3', icon: Package, color: '#4a6359' },
+    { label: 'NFTs Minted', value: '1,234', change: '+156', icon: TrendingUp, color: '#a56b8a' },
+    { label: 'NFTs Claimed', value: '892', change: '+89', icon: Users, color: '#d4a960' },
+    { label: 'Conversion Rate', value: '72%', change: '+5%', icon: DollarSign, color: '#4a6359' },
+  ];
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg" style={{ backgroundColor: `${stat.color}20` }}>
+                  <Icon className="w-6 h-6" style={{ color: stat.color }} />
+                </div>
+                <span className="text-sm font-medium text-green-600">{stat.change}</span>
+              </div>
+              <h3 className="text-2xl font-bold text-[#4a6359]">{stat.value}</h3>
+              <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Recent Activity */}
+      <div className="border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-bold text-[#4a6359] mb-4">Recent Campaigns</h3>
+        <div className="space-y-4">
+          {[
+            { name: 'Summer Reading Rewards', status: 'active', minted: 234, claimed: 156 },
+            { name: 'Book Club Access', status: 'active', minted: 89, claimed: 67 },
+            { name: 'Author Meet & Greet', status: 'completed', minted: 150, claimed: 150 },
+          ].map((campaign, index) => (
+            <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+              <div>
+                <h4 className="font-medium text-[#4a6359]">{campaign.name}</h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  {campaign.claimed}/{campaign.minted} claimed
+                </p>
+              </div>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  campaign.status === 'active'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                {campaign.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Performance Chart Placeholder */}
+      <div className="border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-bold text-[#4a6359] mb-4">Performance Overview</h3>
+        <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+          <p className="text-gray-500">Chart visualization coming soon</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BrandOverview;
