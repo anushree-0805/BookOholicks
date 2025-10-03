@@ -1,7 +1,9 @@
 import express from 'express';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
+import Community from '../models/Community.js';
 import { verifyToken } from '../config/firebase.js';
+import { checkPostMilestone, checkEngagementMilestone } from '../services/milestoneService.js';
 
 const router = express.Router();
 
@@ -58,6 +60,9 @@ router.get('/:postId', verifyToken, async (req, res) => {
 // Create post
 router.post('/', verifyToken, async (req, res) => {
   try {
+    console.log('Creating post for user:', req.user?.uid);
+    console.log('Post data:', req.body);
+
     const post = new Post({
       ...req.body,
       userId: req.user.uid
@@ -71,9 +76,16 @@ router.post('/', verifyToken, async (req, res) => {
       });
     }
 
+    // Check post count milestone (async, don't block response)
+    checkPostMilestone(req.user.uid).catch(err =>
+      console.error('Milestone check error:', err)
+    );
+
+    console.log('Post created successfully:', post._id);
     res.status(201).json(post);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating post', error: error.message });
+    console.error('Error creating post:', error);
+    res.status(500).json({ message: 'Error creating post', error: error.message, details: error.stack });
   }
 });
 
@@ -99,6 +111,14 @@ router.post('/:postId/like', verifyToken, async (req, res) => {
     }
 
     await post.save();
+
+    // Check engagement milestone for post owner (async, don't block response)
+    if (!alreadyLiked) {
+      checkEngagementMilestone(post.userId).catch(err =>
+        console.error('Milestone check error:', err)
+      );
+    }
+
     res.json(post);
   } catch (error) {
     res.status(500).json({ message: 'Error liking post', error: error.message });
@@ -122,6 +142,12 @@ router.post('/:postId/comment', verifyToken, async (req, res) => {
     post.stats.commentCount += 1;
 
     await post.save();
+
+    // Check engagement milestone for post owner (async, don't block response)
+    checkEngagementMilestone(post.userId).catch(err =>
+      console.error('Milestone check error:', err)
+    );
+
     res.json(post);
   } catch (error) {
     res.status(500).json({ message: 'Error commenting', error: error.message });

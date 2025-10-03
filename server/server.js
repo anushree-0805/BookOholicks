@@ -26,6 +26,7 @@ import brandsRouter from './routes/brands.js';
 import campaignsRouter from './routes/campaigns.js';
 import postsRouter from './routes/posts.js';
 import communitiesRouter from './routes/communities.js';
+import milestonesRouter from './routes/milestones.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -47,6 +48,7 @@ app.use('/api/brands', brandsRouter);
 app.use('/api/campaigns', campaignsRouter);
 app.use('/api/posts', postsRouter);
 app.use('/api/communities', communitiesRouter);
+app.use('/api/milestones', milestonesRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
