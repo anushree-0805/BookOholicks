@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import apiClient from '../config/api';
+import api from '../config/api';
 
 export const useAuth = () => {
   const [user, setUser] = useState(null);
@@ -20,7 +20,7 @@ export const useAuth = () => {
       if (firebaseUser) {
         // Fetch user profile from MongoDB
         try {
-          const response = await apiClient.get(`/api/users/${firebaseUser.uid}`);
+          const response = await api.get(`/users/${firebaseUser.uid}`);
           setUserProfile(response.data);
         } catch (error) {
           console.error('Error fetching user profile:', error);
@@ -45,7 +45,7 @@ export const useAuth = () => {
 
       // Create user profile in MongoDB
       const token = await userCredential.user.getIdToken();
-      await apiClient.post('/api/users', {
+      await api.post('/users', {
         userId: userCredential.user.uid,
         email: userCredential.user.email,
         accountType,
@@ -71,7 +71,7 @@ export const useAuth = () => {
 
       // Fetch user profile to get account type
       const token = await userCredential.user.getIdToken();
-      const response = await apiClient.get(`/api/users/${userCredential.user.uid}`, {
+      const response = await api.get(`/users/${userCredential.user.uid}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

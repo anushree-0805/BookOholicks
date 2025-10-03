@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard'
 import BrandDashboard from './pages/BrandDashboard'
 import Home from './pages/Home'
 import GlobalFeed from './pages/GlobalFeed'
+import Communities from './pages/Communities'
+import CommunityDetail from './pages/CommunityDetail'
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/brand-dashboard" element={<BrandDashboard />} />
           <Route path="/feed" element={<GlobalFeed />} />
+          <Route path="/communities" element={<Communities />} />
+          <Route path="/communities/:communityId" element={<CommunityDetail />} />
         </Routes>
       </div>
     </Router>

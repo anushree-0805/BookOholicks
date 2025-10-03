@@ -98,12 +98,26 @@ const Navbar = () => {
                 Home
               </a>
               {user && (
-                <a
-                  href={userProfile?.accountType === 'brand' ? '/brand-dashboard' : '/dashboard'}
-                  className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  Dashboard
-                </a>
+                <>
+                  <a
+                    href={userProfile?.accountType === 'brand' ? '/brand-dashboard' : '/dashboard'}
+                    className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Dashboard
+                  </a>
+                  <a
+                    href="/feed"
+                    className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Feed
+                  </a>
+                  <a
+                    href="/communities"
+                    className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    Communities
+                  </a>
+                </>
               )}
             </div>
 

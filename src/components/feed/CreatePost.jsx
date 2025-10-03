@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Image, Video, Link2, Hash, Star, Quote, BookOpen, X } from 'lucide-react';
 import api from '../../config/api';
 
-const CreatePost = ({ onPostCreated }) => {
+const CreatePost = ({ onPostCreated, communityId = null }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [postType, setPostType] = useState('text');
   const [content, setContent] = useState({
@@ -55,7 +55,8 @@ const CreatePost = ({ onPostCreated }) => {
         content: cleanContent,
         hashtags: hashtags.filter(tag => tag.trim()),
         links: links.filter(link => link.url && link.url.trim()),
-        isPublic: true
+        isPublic: true,
+        ...(communityId && { communityId })
       };
 
       const response = await api.post('/posts', postData);
