@@ -5,6 +5,7 @@ import ProfileEdit from '../components/dashboard/ProfileEdit';
 import ReadingStreak from '../components/dashboard/ReadingStreak';
 import NFTCollection from '../components/dashboard/NFTCollection';
 import Overview from '../components/dashboard/Overview';
+import WalletConnect from '../components/dashboard/WalletConnect';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -89,7 +90,12 @@ const Dashboard = () => {
         {activeTab === 'overview' && <Overview />}
         {activeTab === 'profile' && <ProfileEdit />}
         {activeTab === 'streaks' && <ReadingStreak />}
-        {activeTab === 'nfts' && <NFTCollection />}
+        {activeTab === 'nfts' && (
+          <div className="space-y-6">
+            <WalletConnect />
+            <NFTCollection />
+          </div>
+        )}
       </div>
     </div>
   );

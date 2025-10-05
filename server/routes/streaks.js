@@ -3,6 +3,7 @@ import ReadingStreak from '../models/ReadingStreak.js';
 import ReadingSession from '../models/ReadingSession.js';
 import NFT from '../models/NFT.js';
 import { verifyToken } from '../config/firebase.js';
+import { checkReadingStreak } from '../services/rewardService.js';
 
 const router = express.Router();
 
@@ -76,6 +77,11 @@ router.post('/log-session', verifyToken, async (req, res) => {
 
     streak.lastReadDate = today;
     await streak.save();
+
+    // Check reading streak rewards (async, don't block response)
+    checkReadingStreak(userId, streak.currentStreak).catch(err =>
+      console.error('Reading streak reward check error:', err)
+    );
 
     res.status(201).json({ session, streak });
   } catch (error) {

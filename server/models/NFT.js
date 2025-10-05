@@ -46,6 +46,23 @@ const nftSchema = new mongoose.Schema({
   dateEarned: {
     type: Date,
     default: Date.now
+  },
+  // Blockchain data
+  tokenId: {
+    type: String,
+    default: null
+  },
+  transactionHash: {
+    type: String,
+    default: null
+  },
+  blockNumber: {
+    type: Number,
+    default: null
+  },
+  onChain: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

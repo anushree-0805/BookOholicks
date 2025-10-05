@@ -7,8 +7,12 @@ import Home from './pages/Home'
 import GlobalFeed from './pages/GlobalFeed'
 import Communities from './pages/Communities'
 import CommunityDetail from './pages/CommunityDetail'
+import RewardNotification from './components/common/RewardNotification'
+import { useRewardNotifications } from './hooks/useRewardNotifications'
 
 function App() {
+  const { notification, closeNotification } = useRewardNotifications();
+
   return (
     <Router>
       <div className="App min-h-screen">
@@ -21,6 +25,11 @@ function App() {
           <Route path="/communities" element={<Communities />} />
           <Route path="/communities/:communityId" element={<CommunityDetail />} />
         </Routes>
+
+        {/* Reward Notifications */}
+        {notification && (
+          <RewardNotification reward={notification} onClose={closeNotification} />
+        )}
       </div>
     </Router>
   )

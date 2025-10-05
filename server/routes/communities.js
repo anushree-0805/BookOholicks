@@ -4,6 +4,7 @@ import Post from '../models/Post.js';
 import CommunityMember from '../models/CommunityMember.js';
 import User from '../models/User.js';
 import { verifyToken } from '../config/firebase.js';
+import { checkCommunityJoin } from '../services/rewardService.js';
 
 const router = express.Router();
 
@@ -128,12 +129,10 @@ router.post('/:communityId/join', verifyToken, async (req, res) => {
       $inc: { 'stats.memberCount': 1 }
     });
 
-    // Check first community milestone
-    const userCommunityCount = await CommunityMember.countDocuments({ userId });
-    if (userCommunityCount === 1) {
-      // TODO: Award "Explorer NFT" - will integrate with milestone service
-      console.log(`🏆 First community joined by user ${userId} - Explorer NFT ready`);
-    }
+    // Check community join reward (async, don't block response)
+    checkCommunityJoin(userId, req.params.communityId).catch(err =>
+      console.error('Community join reward check error:', err)
+    );
 
     res.json({ message: 'Joined community successfully', member });
   } catch (error) {

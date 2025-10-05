@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Community from '../models/Community.js';
 import { verifyToken } from '../config/firebase.js';
 import { checkPostMilestone, checkEngagementMilestone } from '../services/milestoneService.js';
+import { checkPostingStreak, checkPostLikes } from '../services/rewardService.js';
 
 const router = express.Router();
 
@@ -81,6 +82,11 @@ router.post('/', verifyToken, async (req, res) => {
       console.error('Milestone check error:', err)
     );
 
+    // Check posting streak reward (async, don't block response)
+    checkPostingStreak(req.user.uid).catch(err =>
+      console.error('Posting streak check error:', err)
+    );
+
     console.log('Post created successfully:', post._id);
     res.status(201).json(post);
   } catch (error) {
@@ -117,6 +123,13 @@ router.post('/:postId/like', verifyToken, async (req, res) => {
       checkEngagementMilestone(post.userId).catch(err =>
         console.error('Milestone check error:', err)
       );
+
+      // Check if post has reached 100 likes for Popular Opinion NFT
+      if (post.stats.likeCount >= 100) {
+        checkPostLikes(post.userId, post._id.toString(), post.stats.likeCount).catch(err =>
+          console.error('Post likes reward check error:', err)
+        );
+      }
     }
 
     res.json(post);

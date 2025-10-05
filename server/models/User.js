@@ -45,7 +45,8 @@ const userSchema = new mongoose.Schema({
   },
   walletAddress: {
     type: String,
-    default: null
+    default: null,
+    index: true
   },
   createdAt: {
     type: Date,

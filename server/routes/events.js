@@ -2,6 +2,7 @@ import express from 'express';
 import Event from '../models/Event.js';
 import CommunityMember from '../models/CommunityMember.js';
 import { verifyToken } from '../config/firebase.js';
+import { checkEventCreation, checkEventAttendance } from '../services/rewardService.js';
 
 const router = express.Router();
 
@@ -60,7 +61,10 @@ router.post('/', verifyToken, async (req, res) => {
       { $inc: { 'totalContributions.eventsHosted': 1 } }
     );
 
-    console.log(`📅 Event created by ${req.user.uid} - Event Host NFT ready`);
+    // Check event organizer reward (async, don't block response)
+    checkEventCreation(req.user.uid, event._id.toString()).catch(err =>
+      console.error('Event organizer reward check error:', err)
+    );
 
     res.status(201).json(event);
   } catch (error) {
@@ -105,6 +109,14 @@ router.post('/:eventId/join', verifyToken, async (req, res) => {
     }
 
     await event.save();
+
+    // Check event attendance reward for new attendees (async, don't block response)
+    if (!existingAttendee && status === 'going') {
+      checkEventAttendance(userId, req.params.eventId).catch(err =>
+        console.error('Event attendance reward check error:', err)
+      );
+    }
+
     res.json(event);
   } catch (error) {
     res.status(500).json({ message: 'Error joining event', error: error.message });

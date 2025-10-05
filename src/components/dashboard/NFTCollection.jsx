@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNFTs } from '../../hooks/useNFTs';
 
 const NFTCollection = ({ preview = false }) => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [selectedNFT, setSelectedNFT] = useState(null);
+  const { nfts, loading, redeemNFT } = useNFTs();
 
   // Mock NFT data - will be replaced with blockchain data
   const nftCollection = [
@@ -114,11 +116,24 @@ const NFTCollection = ({ preview = false }) => {
     { id: 'community', name: 'Community', icon: '👥' }
   ];
 
+  // Use actual NFTs from API or mock data
+  const nftData = nfts.length > 0 ? nfts : nftCollection;
+
   const filteredNFTs = filterCategory === 'all'
-    ? nftCollection
-    : nftCollection.filter(nft => nft.category === filterCategory);
+    ? nftData
+    : nftData.filter(nft => nft.category === filterCategory);
 
   const displayNFTs = preview ? filteredNFTs.slice(0, 4) : filteredNFTs;
+
+  const handleRedeem = async (nftId) => {
+    const result = await redeemNFT(nftId);
+    if (result.success) {
+      alert('NFT redeemed successfully!');
+      setSelectedNFT(null);
+    } else {
+      alert('Error redeeming NFT: ' + result.error);
+    }
+  };
 
   const getRarityColor = (rarity) => {
     switch (rarity) {
@@ -160,20 +175,20 @@ const NFTCollection = ({ preview = false }) => {
         <div className="bg-gradient-to-r from-[#a56b8a] to-[#8e5a75] rounded-2xl p-6 text-white shadow-lg">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <p className="text-4xl font-bold">{nftCollection.length}</p>
+              <p className="text-4xl font-bold">{nftData.length}</p>
               <p className="text-sm opacity-90 mt-1">Total NFTs</p>
             </div>
             <div className="text-center">
-              <p className="text-4xl font-bold">{nftCollection.filter(n => !n.redeemed).length}</p>
+              <p className="text-4xl font-bold">{nftData.filter(n => !n.redeemed).length}</p>
               <p className="text-sm opacity-90 mt-1">Available</p>
             </div>
             <div className="text-center">
-              <p className="text-4xl font-bold">{nftCollection.filter(n => n.redeemed).length}</p>
+              <p className="text-4xl font-bold">{nftData.filter(n => n.redeemed).length}</p>
               <p className="text-sm opacity-90 mt-1">Redeemed</p>
             </div>
             <div className="text-center">
-              <p className="text-4xl font-bold">$247</p>
-              <p className="text-sm opacity-90 mt-1">Estimated Value</p>
+              <p className="text-4xl font-bold">{nftData.filter(n => n.onChain).length}</p>
+              <p className="text-sm opacity-90 mt-1">On Blockchain</p>
             </div>
           </div>
         </div>
@@ -215,9 +230,14 @@ const NFTCollection = ({ preview = false }) => {
               <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <h4 className="font-bold text-[#4a6359] text-sm line-clamp-2">{nft.name}</h4>
-                  {nft.redeemed && (
-                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">✓</span>
-                  )}
+                  <div className="flex gap-1">
+                    {nft.redeemed && (
+                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">✓</span>
+                    )}
+                    {nft.onChain && (
+                      <span className="text-xs bg-blue-200 text-blue-700 px-2 py-1 rounded-full" title="On blockchain">⛓️</span>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-xs text-[#6b7f75] mb-3 line-clamp-2">{nft.description}</p>
@@ -331,9 +351,39 @@ const NFTCollection = ({ preview = false }) => {
                 </ul>
               </div>
 
+              {/* Blockchain Info */}
+              {selectedNFT.onChain && (
+                <div className="bg-blue-50 p-4 rounded-xl">
+                  <h5 className="font-bold text-[#4a6359] mb-2 flex items-center gap-2">
+                    <span>⛓️</span>
+                    Blockchain Information
+                  </h5>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-[#6b7f75]">Token ID: </span>
+                      <span className="font-mono text-[#4a6359]">{selectedNFT.tokenId}</span>
+                    </div>
+                    {selectedNFT.transactionHash && (
+                      <div>
+                        <span className="text-[#6b7f75]">TX Hash: </span>
+                        <a
+                          href={`https://testnet.u2uscan.xyz/tx/${selectedNFT.transactionHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-blue-600 hover:underline text-xs"
+                        >
+                          {selectedNFT.transactionHash.substring(0, 10)}...
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex gap-4">
                 <button
+                  onClick={() => handleRedeem(selectedNFT._id || selectedNFT.id)}
                   className={`flex-1 py-3 rounded-lg font-medium transition-all ${
                     selectedNFT.redeemed
                       ? 'bg-gray-200 text-gray-600 cursor-not-allowed'
@@ -343,9 +393,14 @@ const NFTCollection = ({ preview = false }) => {
                 >
                   {selectedNFT.redeemed ? '✓ Already Redeemed' : '🎁 Redeem Benefits'}
                 </button>
-                <button className="px-6 py-3 bg-[#4a6359] text-white rounded-lg font-medium hover:bg-[#3d5248] transition-all">
-                  Share
-                </button>
+                {selectedNFT.onChain && (
+                  <button
+                    onClick={() => window.open(`https://testnet.u2uscan.xyz/token/${process.env.NFT_CONTRACT_ADDRESS}?a=${selectedNFT.tokenId}`, '_blank')}
+                    className="px-6 py-3 bg-[#4a6359] text-white rounded-lg font-medium hover:bg-[#3d5248] transition-all"
+                  >
+                    View on Chain
+                  </button>
+                )}
               </div>
             </div>
           </div>

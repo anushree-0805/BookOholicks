@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "init-rewards": "node scripts/initializeRewards.js",
+    "check-minting": "node ../scripts/checkNFTMinting.js",
+    "check-user-nfts": "node ../scripts/checkUserNFTs.js",
+    "test-mint": "node ../scripts/testMint.js"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +19,7 @@
     "cloudinary": "^1.41.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
+    "ethers": "^6.15.0",
     "express": "^4.18.2",
     "firebase-admin": "^12.0.0",
     "mongoose": "^8.0.0",
