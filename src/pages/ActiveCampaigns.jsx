@@ -81,7 +81,7 @@ const ActiveCampaigns = () => {
 const CampaignCard = ({ campaign, onClaimed }) => {
   const { user } = useAuth();
   const [claiming, setClaiming] = useState(false);
-  const [eligible, setEligible] = useState(null);
+  const [eligibilityResult, setEligibilityResult] = useState(null);
   const [checkingEligibility, setCheckingEligibility] = useState(true);
 
   useEffect(() => {
@@ -90,7 +90,7 @@ const CampaignCard = ({ campaign, onClaimed }) => {
 
   const checkEligibility = async () => {
     if (!user) {
-      setEligible(false);
+      setEligibilityResult({ eligible: false, reason: 'Please sign in' });
       setCheckingEligibility(false);
       return;
     }
@@ -99,10 +99,10 @@ const CampaignCard = ({ campaign, onClaimed }) => {
       const response = await api.get(
         `/campaigns/${campaign._id}/check-eligibility/${user.uid}`
       );
-      setEligible(response.data.eligible);
+      setEligibilityResult(response.data);
     } catch (error) {
       console.error('Error checking eligibility:', error);
-      setEligible(false);
+      setEligibilityResult({ eligible: false, reason: 'Error checking eligibility' });
     } finally {
       setCheckingEligibility(false);
     }
@@ -209,6 +209,16 @@ const CampaignCard = ({ campaign, onClaimed }) => {
           </div>
         )}
 
+        {/* Eligibility Info */}
+        {campaign.eligibility?.type !== 'open' && eligibilityResult && (
+          <div className="mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="text-xs text-gray-600">
+              <span className="font-medium">Requirement: </span>
+              {campaign.eligibility?.description || 'Check eligibility'}
+            </div>
+          </div>
+        )}
+
         {/* Claim Button */}
         {checkingEligibility ? (
           <button
@@ -231,13 +241,20 @@ const CampaignCard = ({ campaign, onClaimed }) => {
           >
             Sold Out
           </button>
-        ) : !eligible ? (
-          <button
-            disabled
-            className="w-full py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium"
-          >
-            Already Claimed or Ineligible
-          </button>
+        ) : !eligibilityResult?.eligible ? (
+          <div>
+            <button
+              disabled
+              className="w-full py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium mb-2"
+            >
+              Not Eligible
+            </button>
+            {eligibilityResult?.reason && (
+              <div className="text-xs text-red-600 text-center">
+                {eligibilityResult.reason}
+              </div>
+            )}
+          </div>
         ) : (
           <button
             onClick={handleClaim}

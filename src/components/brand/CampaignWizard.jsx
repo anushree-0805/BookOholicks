@@ -40,6 +40,16 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
     eligibilityType: 'open',
     startDate: '',
     endDate: '',
+
+    // Eligibility requirements
+    communityId: '',
+    minPosts: 0,
+    minPostLikes: 0,
+    minComments: 0,
+    minTotalPosts: 0,
+    streakDays: 0,
+    eventId: '',
+    minPurchaseAmount: 0,
   });
 
   const handleNext = () => {
@@ -48,6 +58,60 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
 
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
+  };
+
+  const getEligibilityRequirements = () => {
+    const { eligibilityType } = campaignData;
+
+    switch (eligibilityType) {
+      case 'community':
+        return {
+          communityId: campaignData.communityId,
+          minPosts: parseInt(campaignData.minPosts) || 0
+        };
+      case 'engagement':
+        return {
+          minPosts: parseInt(campaignData.minTotalPosts) || 0,
+          minPostLikes: parseInt(campaignData.minPostLikes) || 0,
+          minComments: parseInt(campaignData.minComments) || 0
+        };
+      case 'streak':
+        return {
+          streakDays: parseInt(campaignData.streakDays) || 0
+        };
+      case 'event':
+        return {
+          eventId: campaignData.eventId,
+          mustAttend: true
+        };
+      case 'purchase':
+        return {
+          minPurchaseAmount: parseFloat(campaignData.minPurchaseAmount) || 0
+        };
+      default:
+        return {};
+    }
+  };
+
+  const getEligibilityDescription = () => {
+    const { eligibilityType } = campaignData;
+
+    switch (eligibilityType) {
+      case 'open':
+        return 'Open to all users';
+      case 'community':
+        return `Must be member of community${campaignData.minPosts > 0 ? ` with ${campaignData.minPosts} posts` : ''}`;
+      case 'engagement':
+        return 'Based on engagement metrics';
+      case 'streak':
+        return `Requires ${campaignData.streakDays}-day reading streak`;
+      case 'event':
+        return 'Must attend specific event';
+      case 'purchase':
+        return `Minimum purchase of $${campaignData.minPurchaseAmount}`;
+      default:
+        return 'Custom eligibility';
+    }
   };
 
   const handleSubmit = async () => {
@@ -84,8 +148,8 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
         status: 'draft',
         eligibility: {
           type: campaignData.eligibilityType,
-          requirements: {},
-          description: 'Open to all users'
+          requirements: getEligibilityRequirements(),
+          description: getEligibilityDescription()
         }
       };
 
@@ -373,7 +437,7 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
       case 4:
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-[#4a6359]">Distribution Method</h2>
+            <h2 className="text-2xl font-bold text-[#4a6359]">Distribution & Eligibility</h2>
 
             <div className="grid grid-cols-2 gap-4">
               {[
@@ -397,6 +461,152 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
                 </button>
               ))}
             </div>
+
+            {/* Eligibility Type */}
+            <div>
+              <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                Eligibility Requirements
+              </label>
+              <select
+                value={campaignData.eligibilityType}
+                onChange={(e) => updateData('eligibilityType', e.target.value)}
+                className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+              >
+                <option value="open">Open to All</option>
+                <option value="community">Community Membership</option>
+                <option value="engagement">Engagement Based</option>
+                <option value="streak">Reading Streak</option>
+                <option value="event">Event Attendance</option>
+                <option value="purchase">Purchase Required</option>
+              </select>
+            </div>
+
+            {/* Community Eligibility */}
+            {campaignData.eligibilityType === 'community' && (
+              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                    Community ID
+                  </label>
+                  <input
+                    type="text"
+                    value={campaignData.communityId}
+                    onChange={(e) => updateData('communityId', e.target.value)}
+                    className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                    placeholder="Enter community ID"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                    Minimum Posts (optional)
+                  </label>
+                  <input
+                    type="number"
+                    value={campaignData.minPosts}
+                    onChange={(e) => updateData('minPosts', e.target.value)}
+                    className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Engagement Eligibility */}
+            {campaignData.eligibilityType === 'engagement' && (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                    Minimum Total Posts
+                  </label>
+                  <input
+                    type="number"
+                    value={campaignData.minTotalPosts}
+                    onChange={(e) => updateData('minTotalPosts', e.target.value)}
+                    className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                    Minimum Likes on a Post
+                  </label>
+                  <input
+                    type="number"
+                    value={campaignData.minPostLikes}
+                    onChange={(e) => updateData('minPostLikes', e.target.value)}
+                    className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                    Minimum Comments Received
+                  </label>
+                  <input
+                    type="number"
+                    value={campaignData.minComments}
+                    onChange={(e) => updateData('minComments', e.target.value)}
+                    className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Streak Eligibility */}
+            {campaignData.eligibilityType === 'streak' && (
+              <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                  Required Reading Streak (days)
+                </label>
+                <input
+                  type="number"
+                  value={campaignData.streakDays}
+                  onChange={(e) => updateData('streakDays', e.target.value)}
+                  className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                  placeholder="7"
+                  min="1"
+                />
+              </div>
+            )}
+
+            {/* Event Eligibility */}
+            {campaignData.eligibilityType === 'event' && (
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                  Event ID
+                </label>
+                <input
+                  type="text"
+                  value={campaignData.eventId}
+                  onChange={(e) => updateData('eventId', e.target.value)}
+                  className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                  placeholder="Enter event ID"
+                />
+              </div>
+            )}
+
+            {/* Purchase Eligibility */}
+            {campaignData.eligibilityType === 'purchase' && (
+              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                  Minimum Purchase Amount ($)
+                </label>
+                <input
+                  type="number"
+                  value={campaignData.minPurchaseAmount}
+                  onChange={(e) => updateData('minPurchaseAmount', e.target.value)}
+                  className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                  placeholder="50"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>

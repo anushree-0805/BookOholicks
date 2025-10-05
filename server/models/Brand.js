@@ -7,9 +7,17 @@ const brandSchema = new mongoose.Schema({
     unique: true,
     ref: 'User'
   },
+  name: {
+    type: String,
+    default: ''
+  },
   brandName: {
     type: String,
-    required: true
+    default: ''
+  },
+  email: {
+    type: String,
+    default: ''
   },
   logo: {
     type: String,
@@ -26,13 +34,23 @@ const brandSchema = new mongoose.Schema({
   category: {
     type: String,
     enum: ['bookstore', 'publisher', 'author', 'event', 'other'],
-    required: true
+    default: 'other'
   },
   socialLinks: {
     twitter: { type: String, default: '' },
     instagram: { type: String, default: '' },
     facebook: { type: String, default: '' },
     linkedin: { type: String, default: '' }
+  },
+  socialMedia: {
+    twitter: { type: String, default: '' },
+    instagram: { type: String, default: '' },
+    facebook: { type: String, default: '' },
+    linkedin: { type: String, default: '' }
+  },
+  verified: {
+    type: Boolean,
+    default: false
   },
   walletAddress: {
     type: String,

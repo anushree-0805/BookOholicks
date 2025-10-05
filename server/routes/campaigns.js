@@ -372,32 +372,11 @@ router.get('/:campaignId/check-eligibility/:userId', verifyToken, async (req, re
       return res.status(404).json({ message: 'Campaign not found' });
     }
 
-    // Check if user already claimed
-    const existingClaim = await CampaignClaim.findOne({ campaignId, userId });
-    if (existingClaim) {
-      return res.json({ eligible: false, reason: 'Already claimed this campaign' });
-    }
+    // Import and use eligibility service
+    const { checkEligibility } = await import('../services/eligibilityService.js');
+    const eligibilityResult = await checkEligibility(userId, campaign);
 
-    // Check if NFTs available
-    if (!campaign.unlimited && campaign.claimed >= campaign.totalSupply) {
-      return res.json({ eligible: false, reason: 'No NFTs remaining' });
-    }
-
-    // Check campaign active
-    if (!campaign.isActive) {
-      return res.json({ eligible: false, reason: 'Campaign not active' });
-    }
-
-    // Check eligibility criteria (basic implementation - expand based on requirements)
-    const eligibilityType = campaign.eligibility?.type;
-
-    if (eligibilityType === 'open') {
-      return res.json({ eligible: true });
-    }
-
-    // TODO: Implement specific eligibility checks based on type
-    // For now, return true for other types
-    res.json({ eligible: true, eligibilityType });
+    res.json(eligibilityResult);
   } catch (error) {
     res.status(500).json({ message: 'Error checking eligibility', error: error.message });
   }

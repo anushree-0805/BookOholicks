@@ -1,19 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../config/api';
 
 const ProfileEdit = () => {
-  const { user } = useAuth();
+  const { user, userProfile, refreshUserProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: 'Book Enthusiast',
-    bio: 'Passionate reader exploring worlds through pages 📚',
+    name: '',
+    bio: '',
     profilePic: null,
-    interestedGenres: ['Fiction', 'Mystery', 'Science Fiction'],
-    location: 'New York, USA',
-    favoriteAuthor: 'J.K. Rowling',
-    readingGoal: '50 books/year'
+    interestedGenres: [],
+    location: '',
+    favoriteAuthor: '',
+    readingGoal: ''
   });
   const [previewImage, setPreviewImage] = useState(null);
+
+  // Load user profile data when component mounts or userProfile changes
+  useEffect(() => {
+    if (userProfile) {
+      setProfileData({
+        name: userProfile.name || '',
+        bio: userProfile.bio || '',
+        profilePic: null,
+        interestedGenres: userProfile.interestedGenres || [],
+        location: userProfile.location || '',
+        favoriteAuthor: userProfile.favoriteAuthor || '',
+        readingGoal: userProfile.readingGoal || ''
+      });
+      if (userProfile.profilePic) {
+        setPreviewImage(userProfile.profilePic);
+      }
+    }
+  }, [userProfile]);
 
   const availableGenres = [
     'Fiction', 'Non-Fiction', 'Mystery', 'Thriller', 'Science Fiction',
@@ -48,10 +68,54 @@ const ProfileEdit = () => {
     }
   };
 
-  const handleSave = () => {
-    // TODO: Save to database/Firebase
-    console.log('Saving profile data:', profileData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+
+      // Prepare update payload
+      const updatePayload = {
+        name: profileData.name,
+        bio: profileData.bio,
+        interestedGenres: profileData.interestedGenres,
+        location: profileData.location,
+        favoriteAuthor: profileData.favoriteAuthor,
+        readingGoal: profileData.readingGoal
+      };
+
+      // Update user profile
+      await api.put(`/users/${user.uid}`, updatePayload);
+
+      // If there's a new profile picture, upload it
+      if (profileData.profilePic) {
+        const formData = new FormData();
+        formData.append('profilePic', profileData.profilePic);
+
+        await api.post(`/users/${user.uid}/profile-pic`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      }
+
+      // Refresh user profile to get updated data
+      await refreshUserProfile();
+
+      setIsEditing(false);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      alert('Error updating profile: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,13 +131,14 @@ const ProfileEdit = () => {
           </h2>
           <button
             onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            className={`px-6 py-2 rounded-lg font-medium transition-all ${
+            disabled={loading}
+            className={`px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
               isEditing
                 ? 'bg-[#4a6359] text-white hover:bg-[#3d5248]'
                 : 'bg-[#a56b8a] text-white hover:bg-[#8e5a75]'
             }`}
           >
-            {isEditing ? '💾 Save Changes' : '✏️ Edit Profile'}
+            {loading ? '⏳ Saving...' : isEditing ? '💾 Save Changes' : '✏️ Edit Profile'}
           </button>
         </div>
 

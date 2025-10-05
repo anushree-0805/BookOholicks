@@ -1,9 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Camera, Save } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import api from '../../config/api';
 
 const BrandSettings = () => {
+  const { user, userProfile, refreshUserProfile } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [logoFile, setLogoFile] = useState(null);
+  const [previewLogo, setPreviewLogo] = useState(null);
   const [brandData, setBrandData] = useState({
-    brandName: '',
+    name: '',
     logo: null,
     description: '',
     website: '',
@@ -16,16 +22,94 @@ const BrandSettings = () => {
     subscription: 'free',
   });
 
+  // Load brand profile data
+  useEffect(() => {
+    if (userProfile?.brandProfile) {
+      const brand = userProfile.brandProfile;
+      setBrandData({
+        name: brand.name || brand.brandName || '',
+        logo: brand.logo || null,
+        description: brand.description || '',
+        website: brand.website || '',
+        category: brand.category || 'bookstore',
+        twitter: brand.socialMedia?.twitter || brand.socialLinks?.twitter || '',
+        instagram: brand.socialMedia?.instagram || brand.socialLinks?.instagram || '',
+        facebook: brand.socialMedia?.facebook || brand.socialLinks?.facebook || '',
+        linkedin: brand.socialMedia?.linkedin || brand.socialLinks?.linkedin || '',
+        walletAddress: brand.walletAddress || '',
+        subscription: brand.subscription || 'free',
+      });
+      if (brand.logo) {
+        setPreviewLogo(brand.logo);
+      }
+    }
+  }, [userProfile]);
+
   const handleSave = async () => {
-    // TODO: API call to update brand profile
-    console.log('Saving brand settings:', brandData);
+    if (!user) return;
+
+    try {
+      setLoading(true);
+
+      // Prepare update payload
+      const updatePayload = {
+        name: brandData.name,
+        brandName: brandData.name, // Also update brandName for backward compatibility
+        description: brandData.description,
+        website: brandData.website,
+        category: brandData.category,
+        socialMedia: {
+          twitter: brandData.twitter,
+          instagram: brandData.instagram,
+          facebook: brandData.facebook,
+          linkedin: brandData.linkedin,
+        },
+        socialLinks: { // Also update socialLinks for backward compatibility
+          twitter: brandData.twitter,
+          instagram: brandData.instagram,
+          facebook: brandData.facebook,
+          linkedin: brandData.linkedin,
+        },
+        walletAddress: brandData.walletAddress,
+        subscription: brandData.subscription,
+      };
+
+      // Update brand profile
+      await api.put(`/brands/${user.uid}`, updatePayload);
+
+      // If there's a new logo, upload it
+      if (logoFile) {
+        const formData = new FormData();
+        formData.append('logo', logoFile);
+
+        await api.post(`/brands/${user.uid}/logo`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      }
+
+      // Refresh user profile
+      await refreshUserProfile();
+
+      alert('Brand settings updated successfully!');
+    } catch (error) {
+      console.error('Error saving brand settings:', error);
+      alert('Error updating brand settings: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // TODO: Upload to Cloudinary
-      console.log('Uploading image:', file);
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewLogo(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -39,8 +123,8 @@ const BrandSettings = () => {
         <div className="flex items-center gap-6">
           <div className="relative">
             <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
-              {brandData.logo ? (
-                <img src={brandData.logo} alt="Brand logo" className="w-full h-full object-cover" />
+              {previewLogo ? (
+                <img src={previewLogo} alt="Brand logo" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-3xl">🏢</span>
               )}
@@ -72,8 +156,8 @@ const BrandSettings = () => {
           <label className="block text-sm font-medium text-[#4a6359] mb-2">Brand Name</label>
           <input
             type="text"
-            value={brandData.brandName}
-            onChange={(e) => setBrandData({ ...brandData, brandName: e.target.value })}
+            value={brandData.name}
+            onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
             className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
             placeholder="Your Brand Name"
           />

@@ -5,6 +5,7 @@ import NFT from '../models/NFT.js';
 import User from '../models/User.js';
 import { verifyToken } from '../config/firebase.js';
 import blockchainService from '../services/blockchainService.js';
+import { checkEligibility } from '../services/eligibilityService.js';
 
 const router = express.Router();
 
@@ -29,7 +30,16 @@ router.post('/:campaignId/claim', verifyToken, async (req, res) => {
       return res.status(400).json({ message: 'No NFTs remaining' });
     }
 
-    // Check if user already claimed
+    // Check eligibility
+    const eligibilityResult = await checkEligibility(userId, campaign);
+    if (!eligibilityResult.eligible) {
+      return res.status(403).json({
+        message: 'Not eligible for this campaign',
+        reason: eligibilityResult.reason
+      });
+    }
+
+    // Check if user already claimed (also checked in eligibility service, but double-check here)
     const existingClaim = await CampaignClaim.findOne({ campaignId, userId });
     if (existingClaim) {
       return res.status(400).json({ message: 'You have already claimed this campaign' });

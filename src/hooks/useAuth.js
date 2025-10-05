@@ -21,7 +21,20 @@ export const useAuth = () => {
         // Fetch user profile from MongoDB
         try {
           const response = await api.get(`/users/${firebaseUser.uid}`);
-          setUserProfile(response.data);
+          const userData = response.data;
+
+          // If user is a brand, also fetch brand profile
+          if (userData.accountType === 'brand') {
+            try {
+              const brandResponse = await api.get(`/brands/${firebaseUser.uid}`);
+              setUserProfile({ ...userData, brandProfile: brandResponse.data });
+            } catch (brandError) {
+              console.error('Error fetching brand profile:', brandError);
+              setUserProfile(userData);
+            }
+          } else {
+            setUserProfile(userData);
+          }
         } catch (error) {
           console.error('Error fetching user profile:', error);
         }
@@ -54,6 +67,20 @@ export const useAuth = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      // If brand account, also create brand profile
+      if (accountType === 'brand') {
+        await api.post('/brands', {
+          userId: userCredential.user.uid,
+          email: userCredential.user.email,
+          name: email.split('@')[0], // Default name from email
+          verified: false,
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
 
       return { user: userCredential.user, accountType, error: null };
     } catch (error) {
@@ -93,6 +120,30 @@ export const useAuth = () => {
     }
   };
 
+  const refreshUserProfile = async () => {
+    if (user) {
+      try {
+        const response = await api.get(`/users/${user.uid}`);
+        const userData = response.data;
+
+        // If user is a brand, also fetch brand profile
+        if (userData.accountType === 'brand') {
+          try {
+            const brandResponse = await api.get(`/brands/${user.uid}`);
+            setUserProfile({ ...userData, brandProfile: brandResponse.data });
+          } catch (brandError) {
+            console.error('Error fetching brand profile:', brandError);
+            setUserProfile(userData);
+          }
+        } else {
+          setUserProfile(userData);
+        }
+      } catch (error) {
+        console.error('Error refreshing user profile:', error);
+      }
+    }
+  };
+
   return {
     user,
     userProfile,
@@ -100,5 +151,6 @@ export const useAuth = () => {
     signUp,
     signIn,
     logOut,
+    refreshUserProfile,
   };
 };
