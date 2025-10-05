@@ -291,7 +291,137 @@ contract BookoholicsNFT is ERC721URIStorage, Ownable {
     }
 
     /**
-     * @dev Batch mint NFTs for multiple users
+     * @dev Mint NFT to brand's escrow wallet (for phygital campaigns)
+     * No duplicate reward check for phygital NFTs
+     * @param escrowWallet Brand's escrow wallet
+     * @param name Name of the NFT
+     * @param description Description
+     * @param category Category
+     * @param rarity Rarity level
+     * @param brand Brand name
+     * @param benefits Benefits array
+     * @param tokenURI Token URI
+     */
+    function mintToEscrow(
+        address escrowWallet,
+        string memory name,
+        string memory description,
+        Category category,
+        Rarity rarity,
+        string memory brand,
+        string[] memory benefits,
+        string memory tokenURI
+    ) public onlyOwner returns (uint256) {
+        _tokenIds.increment();
+        uint256 newTokenId = _tokenIds.current();
+
+        _safeMint(escrowWallet, newTokenId);
+
+        if (bytes(tokenURI).length > 0) {
+            _setTokenURI(newTokenId, tokenURI);
+        }
+
+        // Store metadata - use REWARD type for phygital
+        nftMetadata[newTokenId] = NFTMetadata({
+            name: name,
+            description: description,
+            category: category,
+            rarity: rarity,
+            rewardType: RewardType.ACTIVE_POSTER, // Default for phygital
+            brand: brand,
+            redeemed: false,
+            dateEarned: block.timestamp,
+            redeemedAt: 0,
+            benefits: benefits
+        });
+
+        userTokens[escrowWallet].push(newTokenId);
+
+        emit NFTMinted(escrowWallet, newTokenId, RewardType.ACTIVE_POSTER, rarity, name);
+
+        return newTokenId;
+    }
+
+    /**
+     * @dev Batch pre-mint NFTs to escrow wallet for campaigns
+     * @param escrowWallet Brand's escrow wallet
+     * @param quantity Number of NFTs to mint
+     * @param name NFT name
+     * @param description NFT description
+     * @param category Category
+     * @param rarity Rarity
+     * @param brand Brand name
+     * @param benefits Benefits
+     * @param tokenURI Token URI
+     */
+    function batchMintToEscrow(
+        address escrowWallet,
+        uint256 quantity,
+        string memory name,
+        string memory description,
+        Category category,
+        Rarity rarity,
+        string memory brand,
+        string[] memory benefits,
+        string memory tokenURI
+    ) public onlyOwner returns (uint256[] memory) {
+        require(quantity > 0 && quantity <= 1000, "Invalid quantity");
+
+        uint256[] memory tokenIds = new uint256[](quantity);
+
+        for (uint256 i = 0; i < quantity; i++) {
+            tokenIds[i] = mintToEscrow(
+                escrowWallet,
+                name,
+                description,
+                category,
+                rarity,
+                brand,
+                benefits,
+                tokenURI
+            );
+        }
+
+        return tokenIds;
+    }
+
+    /**
+     * @dev Transfer NFT from escrow to user (for campaign claims)
+     * @param from Escrow wallet address
+     * @param to User wallet address
+     * @param tokenId Token ID to transfer
+     */
+    function transferFromEscrow(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public onlyOwner {
+        require(_ownerOf(tokenId) == from, "Token not owned by escrow");
+        require(to != address(0), "Invalid recipient");
+
+        _transfer(from, to, tokenId);
+    }
+
+    /**
+     * @dev Batch transfer NFTs from escrow to users
+     * @param from Escrow wallet
+     * @param recipients Array of recipient addresses
+     * @param tokenIds Array of token IDs
+     */
+    function batchTransferFromEscrow(
+        address from,
+        address[] memory recipients,
+        uint256[] memory tokenIds
+    ) public onlyOwner {
+        require(recipients.length == tokenIds.length, "Array length mismatch");
+
+        for (uint256 i = 0; i < recipients.length; i++) {
+            transferFromEscrow(from, recipients[i], tokenIds[i]);
+        }
+    }
+
+    /**
+     * @dev Batch mint NFTs for multiple users (achievement-based)
      * @param recipients Array of recipient addresses
      * @param names Array of NFT names
      * @param descriptions Array of descriptions
