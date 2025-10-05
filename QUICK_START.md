@@ -1,8 +1,8 @@
-# Quick Start Guide
+# 🚀 Quick Start Guide - Campaign to NFT Claim
 
-## Current Status
+## For Your Current Campaign (Draft Status)
 
-✅ **Frontend** - Running successfully
+Your campaign is currently in **DRAFT** status. Here's exactly what to do:
 - URL: http://localhost:5173
 - No errors
 
