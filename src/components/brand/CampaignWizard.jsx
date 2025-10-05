@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import api from '../../config/api';
 
-const CampaignWizard = ({ onClose }) => {
+const CampaignWizard = ({ onClose, onSuccess }) => {
+  const { user, userProfile } = useAuth();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const [campaignData, setCampaignData] = useState({
     // Step 1: Campaign Type
     campaignType: 'reward',
@@ -15,14 +21,23 @@ const CampaignWizard = ({ onClose }) => {
     utilityDescription: '',
     benefits: [],
     rarity: 'Common',
+    category: 'reward',
 
     // Step 3: NFT Design
     nftImage: null,
+    nftImageUrl: '',
     totalSupply: 100,
     unlimited: false,
 
+    // Phygital fields
+    isPhygital: false,
+    physicalItemName: '',
+    physicalItemDescription: '',
+    physicalItemValue: '',
+
     // Step 4: Distribution
-    distributionMethod: 'qr_code',
+    distributionMethod: 'claim',
+    eligibilityType: 'open',
     startDate: '',
     endDate: '',
   });
@@ -36,9 +51,72 @@ const CampaignWizard = ({ onClose }) => {
   };
 
   const handleSubmit = async () => {
-    // TODO: API call to create campaign
-    console.log('Creating campaign:', campaignData);
-    onClose();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Prepare benefits array
+      const benefitsArray = campaignData.utilityDescription
+        ? [campaignData.utilityValue, campaignData.utilityDescription]
+        : [campaignData.utilityValue];
+
+      // Prepare campaign payload
+      const payload = {
+        brandId: user.uid,
+        brandName: userProfile?.name || 'Unknown Brand',
+        campaignName: campaignData.campaignName,
+        campaignType: campaignData.campaignType,
+        description: campaignData.description,
+        nftImage: campaignData.nftImageUrl || '🎁', // Default emoji if no image
+        category: campaignData.category,
+        rarity: campaignData.rarity,
+        totalSupply: campaignData.unlimited ? 999999 : campaignData.totalSupply,
+        unlimited: campaignData.unlimited,
+        benefits: benefitsArray,
+        utility: {
+          type: campaignData.utilityType,
+          value: campaignData.utilityValue,
+          description: campaignData.utilityDescription
+        },
+        distributionMethod: campaignData.distributionMethod,
+        startDate: campaignData.startDate || new Date().toISOString(),
+        endDate: campaignData.endDate || null,
+        status: 'draft',
+        eligibility: {
+          type: campaignData.eligibilityType,
+          requirements: {},
+          description: 'Open to all users'
+        }
+      };
+
+      // Add phygital fields if applicable
+      if (campaignData.isPhygital) {
+        payload.physicalItem = {
+          enabled: true,
+          name: campaignData.physicalItemName,
+          description: campaignData.physicalItemDescription,
+          estimatedValue: parseFloat(campaignData.physicalItemValue) || 0,
+          images: [],
+          shippingInfo: 'Standard shipping applies'
+        };
+      }
+
+      // Create campaign
+      const response = await api.post('/campaigns', payload);
+      console.log('Campaign created:', response.data);
+
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess(response.data);
+      }
+
+      onClose();
+    } catch (err) {
+      console.error('Error creating campaign:', err);
+      setError(err.response?.data?.message || 'Failed to create campaign');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateData = (field, value) => {
@@ -100,6 +178,68 @@ const CampaignWizard = ({ onClose }) => {
                 placeholder="Describe your campaign..."
               />
             </div>
+
+            {/* Phygital Fields */}
+            {campaignData.campaignType === 'phygital' && (
+              <div className="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="isPhygital"
+                    checked={campaignData.isPhygital}
+                    onChange={(e) => updateData('isPhygital', e.target.checked)}
+                    className="w-4 h-4 text-[#4a6359] rounded"
+                  />
+                  <label htmlFor="isPhygital" className="text-sm font-medium text-[#4a6359]">
+                    Enable Physical Item Redemption
+                  </label>
+                </div>
+
+                {campaignData.isPhygital && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                        Physical Item Name
+                      </label>
+                      <input
+                        type="text"
+                        value={campaignData.physicalItemName}
+                        onChange={(e) => updateData('physicalItemName', e.target.value)}
+                        className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                        placeholder="e.g., Signed Book + Merchandise Bundle"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                        Physical Item Description
+                      </label>
+                      <textarea
+                        value={campaignData.physicalItemDescription}
+                        onChange={(e) => updateData('physicalItemDescription', e.target.value)}
+                        className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                        rows="2"
+                        placeholder="Describe the physical item..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                        Estimated Value ($)
+                      </label>
+                      <input
+                        type="number"
+                        value={campaignData.physicalItemValue}
+                        onChange={(e) => updateData('physicalItemValue', e.target.value)}
+                        className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                        placeholder="50"
+                        min="0"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         );
 
@@ -326,36 +466,53 @@ const CampaignWizard = ({ onClose }) => {
         <div className="p-6">{renderStep()}</div>
 
         {/* Footer */}
-        <div className="flex justify-between items-center p-6 border-t">
-          <button
-            onClick={handleBack}
-            disabled={step === 1}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              step === 1
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-[#4a6359] hover:bg-gray-100'
-            }`}
-          >
-            <ChevronLeft className="w-5 h-5" />
-            Back
-          </button>
-
-          {step < 4 ? (
-            <button
-              onClick={handleNext}
-              className="flex items-center gap-2 bg-[#a56b8a] text-white px-6 py-2 rounded-lg hover:bg-[#8e5a75] transition-all"
-            >
-              Next
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              className="bg-[#4a6359] text-white px-6 py-2 rounded-lg hover:bg-[#3d5248] transition-all"
-            >
-              Create Campaign
-            </button>
+        <div className="p-6 border-t">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
           )}
+
+          <div className="flex justify-between items-center">
+            <button
+              onClick={handleBack}
+              disabled={step === 1 || loading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                step === 1 || loading
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-[#4a6359] hover:bg-gray-100'
+              }`}
+            >
+              <ChevronLeft className="w-5 h-5" />
+              Back
+            </button>
+
+            {step < 4 ? (
+              <button
+                onClick={handleNext}
+                disabled={loading}
+                className="flex items-center gap-2 bg-[#a56b8a] text-white px-6 py-2 rounded-lg hover:bg-[#8e5a75] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="bg-[#4a6359] text-white px-6 py-2 rounded-lg hover:bg-[#3d5248] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Creating...
+                  </>
+                ) : (
+                  'Create Campaign'
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

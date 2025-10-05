@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Dashboard from './pages/Dashboard'
 import BrandDashboard from './pages/BrandDashboard'
+import AdminDashboard from './pages/AdminDashboard'
+import ActiveCampaigns from './pages/ActiveCampaigns'
 import Home from './pages/Home'
 import GlobalFeed from './pages/GlobalFeed'
 import Communities from './pages/Communities'
@@ -21,6 +23,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/brand-dashboard" element={<BrandDashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/campaigns" element={<ActiveCampaigns />} />
           <Route path="/feed" element={<GlobalFeed />} />
           <Route path="/communities" element={<Communities />} />
           <Route path="/communities/:communityId" element={<CommunityDetail />} />

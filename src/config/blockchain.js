@@ -1,6 +1,6 @@
 // Blockchain configuration
 export const BLOCKCHAIN_CONFIG = {
-  contractAddress: import.meta.env.VITE_NFT_CONTRACT_ADDRESS || '0xee2cbd200295a7ade7b0cd1ab7c7980fcdf9d240',
+  contractAddress: import.meta.env.VITE_NFT_CONTRACT_ADDRESS || '0xdd5db1b48516a0319597ab10328400db861a6f8e',
   rpcUrl: import.meta.env.VITE_U2U_RPC_URL || 'https://rpc-nebulas-testnet.uniultra.xyz',
   chainId: parseInt(import.meta.env.VITE_U2U_CHAIN_ID || '2484'),
   chainIdHex: import.meta.env.VITE_U2U_CHAIN_ID_HEX || '0x9b4',

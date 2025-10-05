@@ -5,9 +5,17 @@ dotenv.config();
 
 // NFT Contract ABI (essential functions only)
 const NFT_CONTRACT_ABI = [
-  // Minting
+  // Minting (achievement-based)
   "function mintNFT(address to, string name, string description, uint8 category, uint8 rarity, uint8 rewardType, string brand, string[] benefits, string tokenURI) returns (uint256)",
   "function batchMintNFT(address[] recipients, string[] names, string[] descriptions, uint8[] categories, uint8[] rarities, uint8[] rewardTypes, string brand, string[] benefits)",
+
+  // Phygital campaign minting
+  "function mintToEscrow(address escrowWallet, string name, string description, uint8 category, uint8 rarity, string brand, string[] benefits, string tokenURI) returns (uint256)",
+  "function batchMintToEscrow(address escrowWallet, uint256 quantity, string name, string description, uint8 category, uint8 rarity, string brand, string[] benefits, string tokenURI) returns (uint256[])",
+
+  // Transfer functions
+  "function transferFromEscrow(address from, address to, uint256 tokenId)",
+  "function batchTransferFromEscrow(address from, address[] recipients, uint256[] tokenIds)",
 
   // Queries
   "function getTokensByOwner(address owner) view returns (uint256[])",
@@ -309,6 +317,112 @@ class BlockchainService {
     } catch (error) {
       console.error('❌ Error checking reward:', error);
       return false;
+    }
+  }
+
+  /**
+   * Batch pre-mint NFTs to brand's escrow wallet (for phygital campaigns)
+   */
+  async batchMintToEscrow(escrowWallet, quantity, nftData) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    if (!this.contract) {
+      throw new Error('Blockchain service not initialized');
+    }
+
+    try {
+      const { name, description, category, rarity, brand, benefits } = nftData;
+
+      const categoryEnum = this.getCategoryEnum(category);
+      const rarityEnum = this.getRarityEnum(rarity);
+
+      console.log('🔨 Batch minting to escrow:', {
+        escrowWallet,
+        quantity,
+        name
+      });
+
+      const tx = await this.contract.batchMintToEscrow(
+        escrowWallet,
+        quantity,
+        name,
+        description,
+        categoryEnum,
+        rarityEnum,
+        brand,
+        benefits || [],
+        '' // tokenURI
+      );
+
+      const receipt = await tx.wait();
+
+      // Extract token IDs from events
+      const tokenIds = [];
+      for (const log of receipt.logs) {
+        if (log.fragment && log.fragment.name === 'NFTMinted') {
+          tokenIds.push(log.args[1].toString());
+        }
+      }
+
+      console.log('✅ Batch minted successfully. Token IDs:', tokenIds.length);
+
+      return {
+        success: true,
+        tokenIds,
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error) {
+      console.error('❌ Error batch minting to escrow:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Transfer NFT from escrow to user (for campaign claims)
+   */
+  async transferFromEscrow(escrowWallet, userWallet, tokenId) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    if (!this.contract) {
+      throw new Error('Blockchain service not initialized');
+    }
+
+    try {
+      console.log('📤 Transferring from escrow:', {
+        from: escrowWallet,
+        to: userWallet,
+        tokenId
+      });
+
+      const tx = await this.contract.transferFromEscrow(
+        escrowWallet,
+        userWallet,
+        tokenId
+      );
+
+      const receipt = await tx.wait();
+
+      console.log('✅ NFT transferred successfully');
+
+      return {
+        success: true,
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber
+      };
+    } catch (error) {
+      console.error('❌ Error transferring from escrow:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 

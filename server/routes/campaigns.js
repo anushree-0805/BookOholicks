@@ -1,7 +1,11 @@
 import express from 'express';
 import Campaign from '../models/Campaign.js';
+import CampaignClaim from '../models/CampaignClaim.js';
 import Brand from '../models/Brand.js';
+import User from '../models/User.js';
+import NFT from '../models/NFT.js';
 import { verifyToken } from '../config/firebase.js';
+import blockchainService from '../services/blockchainService.js';
 
 const router = express.Router();
 
@@ -12,6 +16,16 @@ router.get('/brand/:brandId', verifyToken, async (req, res) => {
     res.json(campaigns);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching campaigns', error: error.message });
+  }
+});
+
+// Get all pending campaigns (for admin - temporarily open, add auth later)
+router.get('/pending/all', verifyToken, async (req, res) => {
+  try {
+    const campaigns = await Campaign.find({ status: 'pending_approval' }).sort({ createdAt: -1 });
+    res.json(campaigns);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching pending campaigns', error: error.message });
   }
 });
 
@@ -203,6 +217,189 @@ router.delete('/:campaignId', verifyToken, async (req, res) => {
     res.json({ message: 'Campaign deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting campaign', error: error.message });
+  }
+});
+
+// ==================== PHYGITAL NFT ROUTES ====================
+
+// Submit campaign for approval
+router.post('/:campaignId/submit-for-approval', verifyToken, async (req, res) => {
+  try {
+    const campaign = await Campaign.findById(req.params.campaignId);
+
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found' });
+    }
+
+    if (campaign.status !== 'draft') {
+      return res.status(400).json({ message: 'Only draft campaigns can be submitted for approval' });
+    }
+
+    campaign.status = 'pending_approval';
+    await campaign.save();
+
+    res.json({ message: 'Campaign submitted for approval', campaign });
+  } catch (error) {
+    res.status(500).json({ message: 'Error submitting campaign', error: error.message });
+  }
+});
+
+// Approve campaign (admin only - add auth middleware in production)
+router.post('/:campaignId/approve', verifyToken, async (req, res) => {
+  try {
+    const { adminUserId } = req.body;
+    const campaign = await Campaign.findById(req.params.campaignId);
+
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found' });
+    }
+
+    if (campaign.status !== 'pending_approval') {
+      return res.status(400).json({ message: 'Campaign is not pending approval' });
+    }
+
+    campaign.status = 'approved';
+    campaign.approvedBy = adminUserId || req.user.uid;
+    campaign.approvedAt = new Date();
+    await campaign.save();
+
+    res.json({ message: 'Campaign approved successfully', campaign });
+  } catch (error) {
+    res.status(500).json({ message: 'Error approving campaign', error: error.message });
+  }
+});
+
+// Reject campaign (admin only)
+router.post('/:campaignId/reject', verifyToken, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const campaign = await Campaign.findById(req.params.campaignId);
+
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found' });
+    }
+
+    campaign.status = 'draft';
+    campaign.rejectionReason = reason;
+    await campaign.save();
+
+    res.json({ message: 'Campaign rejected', campaign });
+  } catch (error) {
+    res.status(500).json({ message: 'Error rejecting campaign', error: error.message });
+  }
+});
+
+// Pre-mint NFTs to escrow wallet (for phygital campaigns)
+router.post('/:campaignId/pre-mint', verifyToken, async (req, res) => {
+  try {
+    const { escrowWallet } = req.body;
+    const campaign = await Campaign.findById(req.params.campaignId);
+
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found' });
+    }
+
+    if (campaign.status !== 'approved') {
+      return res.status(400).json({ message: 'Campaign must be approved before pre-minting' });
+    }
+
+    if (campaign.blockchain.preMinted) {
+      return res.status(400).json({ message: 'NFTs already pre-minted for this campaign' });
+    }
+
+    // Batch mint to escrow wallet
+    const result = await blockchainService.batchMintToEscrow(
+      escrowWallet,
+      campaign.totalSupply,
+      {
+        name: campaign.campaignName,
+        description: campaign.description,
+        category: campaign.category,
+        rarity: campaign.rarity,
+        brand: campaign.brandName,
+        benefits: campaign.benefits
+      }
+    );
+
+    if (!result.success) {
+      return res.status(500).json({ message: 'Blockchain minting failed', error: result.error });
+    }
+
+    // Update campaign
+    campaign.blockchain.preMinted = true;
+    campaign.blockchain.preMintTransactionHash = result.transactionHash;
+    campaign.blockchain.tokenIds = result.tokenIds;
+    campaign.blockchain.escrowWallet = escrowWallet;
+    campaign.minted = result.tokenIds.length;
+    await campaign.save();
+
+    res.json({
+      message: 'NFTs pre-minted successfully',
+      tokenIds: result.tokenIds,
+      transactionHash: result.transactionHash
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error pre-minting NFTs', error: error.message });
+  }
+});
+
+// Get active campaigns (user-facing)
+router.get('/active/all', async (req, res) => {
+  try {
+    const now = new Date();
+    const campaigns = await Campaign.find({
+      status: 'active',
+      startDate: { $lte: now },
+      $or: [
+        { endDate: null },
+        { endDate: { $gte: now } }
+      ]
+    }).sort({ createdAt: -1 });
+
+    res.json(campaigns);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching active campaigns', error: error.message });
+  }
+});
+
+// Check if user is eligible for campaign
+router.get('/:campaignId/check-eligibility/:userId', verifyToken, async (req, res) => {
+  try {
+    const { campaignId, userId } = req.params;
+    const campaign = await Campaign.findById(campaignId);
+
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found' });
+    }
+
+    // Check if user already claimed
+    const existingClaim = await CampaignClaim.findOne({ campaignId, userId });
+    if (existingClaim) {
+      return res.json({ eligible: false, reason: 'Already claimed this campaign' });
+    }
+
+    // Check if NFTs available
+    if (!campaign.unlimited && campaign.claimed >= campaign.totalSupply) {
+      return res.json({ eligible: false, reason: 'No NFTs remaining' });
+    }
+
+    // Check campaign active
+    if (!campaign.isActive) {
+      return res.json({ eligible: false, reason: 'Campaign not active' });
+    }
+
+    // Check eligibility criteria (basic implementation - expand based on requirements)
+    const eligibilityType = campaign.eligibility?.type;
+
+    if (eligibilityType === 'open') {
+      return res.json({ eligible: true });
+    }
+
+    // TODO: Implement specific eligibility checks based on type
+    // For now, return true for other types
+    res.json({ eligible: true, eligibilityType });
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking eligibility', error: error.message });
   }
 });
 

@@ -106,6 +106,13 @@ const Navbar = () => {
                     Dashboard
                   </a>
                   <a
+                    href="/campaigns"
+                    className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors relative"
+                  >
+                    🎁 Campaigns
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-2 h-2 animate-pulse"></span>
+                  </a>
+                  <a
                     href="/feed"
                     className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors"
                   >

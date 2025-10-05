@@ -8,6 +8,7 @@ import BrandSettings from '../components/brand/BrandSettings';
 const BrandDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showWizard, setShowWizard] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const tabs = [
     { id: 'overview', label: 'Analytics', icon: BarChart3 },
@@ -15,16 +16,26 @@ const BrandDashboard = () => {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
+  const handleCampaignCreated = () => {
+    setShowWizard(false);
+    setRefreshKey(prev => prev + 1); // Trigger refresh
+  };
+
   const renderContent = () => {
     if (showWizard) {
-      return <CampaignWizard onClose={() => setShowWizard(false)} />;
+      return (
+        <CampaignWizard
+          onClose={() => setShowWizard(false)}
+          onSuccess={handleCampaignCreated}
+        />
+      );
     }
 
     switch (activeTab) {
       case 'overview':
         return <BrandOverview />;
       case 'campaigns':
-        return <CampaignManager onCreateNew={() => setShowWizard(true)} />;
+        return <CampaignManager key={refreshKey} onCreateNew={() => setShowWizard(true)} />;
       case 'settings':
         return <BrandSettings />;
       default:
