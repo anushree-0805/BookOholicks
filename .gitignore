@@ -12,6 +12,25 @@ dist
 dist-ssr
 *.local
 
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.*.local
+server/.env
+server/.env.local
+server/.env.development
+server/.env.production
+
+# Keep example files
+!.env.example
+!server/.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,8 +42,36 @@ dist-ssr
 *.sln
 *.sw?
 *.code-workspace
-.env 
-.env.*.local
-.env.*.local
-.env.local
-.env.development.local  
+
+# Hardhat files
+cache
+artifacts
+typechain
+typechain-types
+coverage
+coverage.json
+
+# Blockchain & Deployment
+deployments/
+.openzeppelin/
+
+# OS Files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Private keys and secrets
+*.pem
+*.key
+private-key.txt
+mnemonic.txt
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/settings.json
+.idea/  
