@@ -26,6 +26,8 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
     // Step 3: NFT Design
     nftImage: null,
     nftImageUrl: '',
+    nftImagePreview: '',
+    uploadingImage: false,
     totalSupply: 100,
     unlimited: false,
 
@@ -185,6 +187,51 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
 
   const updateData = (field, value) => {
     setCampaignData({ ...campaignData, [field]: value });
+  };
+
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+
+    try {
+      // Show preview immediately
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCampaignData(prev => ({ ...prev, nftImagePreview: reader.result }));
+      };
+      reader.readAsDataURL(file);
+
+      // Upload to Cloudinary
+      setCampaignData(prev => ({ ...prev, uploadingImage: true }));
+      setError(null);
+
+      const formData = new FormData();
+      formData.append('nftImage', file);
+
+      const response = await api.post('/campaigns/upload-nft-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      console.log('✅ Image uploaded successfully:', response.data.imageUrl);
+
+      setCampaignData(prev => ({
+        ...prev,
+        nftImage: file,
+        nftImageUrl: response.data.imageUrl,
+        uploadingImage: false
+      }));
+    } catch (err) {
+      console.error('❌ Error uploading image:', err);
+      setError('Failed to upload image: ' + (err.response?.data?.message || err.message));
+      setCampaignData(prev => ({
+        ...prev,
+        uploadingImage: false,
+        nftImagePreview: '',
+        nftImage: null,
+        nftImageUrl: ''
+      }));
+    }
   };
 
   const renderStep = () => {
@@ -391,21 +438,50 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => updateData('nftImage', e.target.files[0])}
+                  onChange={(e) => handleImageUpload(e.target.files[0])}
                   className="hidden"
                   id="nft-image"
+                  disabled={campaignData.uploadingImage}
                 />
-                <label htmlFor="nft-image" className="cursor-pointer">
-                  <div className="text-4xl mb-2">🖼️</div>
-                  <div className="text-[#4a6359] font-medium">Upload NFT Image</div>
-                  <div className="text-sm text-gray-600 mt-1">PNG, JPG up to 10MB</div>
-                  {campaignData.nftImage && (
-                    <div className="text-sm text-[#a56b8a] mt-2">
-                      Selected: {campaignData.nftImage.name}
+                <label htmlFor="nft-image" className={`${campaignData.uploadingImage ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                  {campaignData.nftImagePreview ? (
+                    <div className="space-y-3">
+                      <img
+                        src={campaignData.nftImagePreview}
+                        alt="NFT Preview"
+                        className="w-48 h-48 mx-auto object-cover rounded-lg shadow-md"
+                      />
+                      {campaignData.uploadingImage && (
+                        <div className="text-sm text-[#a56b8a] flex items-center justify-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#a56b8a] border-t-transparent"></div>
+                          Uploading to Cloudinary...
+                        </div>
+                      )}
+                      {campaignData.nftImageUrl && !campaignData.uploadingImage && (
+                        <div className="text-sm text-green-600 flex items-center justify-center gap-2">
+                          ✓ Uploaded successfully
+                        </div>
+                      )}
+                      <div className="text-sm text-gray-600">
+                        Click to change image
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      <div className="text-4xl mb-2">🖼️</div>
+                      <div className="text-[#4a6359] font-medium">
+                        {campaignData.uploadingImage ? 'Uploading...' : 'Upload NFT Image'}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">PNG, JPG up to 10MB</div>
+                    </>
                   )}
                 </label>
               </div>
+              {error && error.includes('image') && (
+                <div className="mt-2 text-sm text-red-600">
+                  {error}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-4">

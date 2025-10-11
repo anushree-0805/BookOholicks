@@ -5,6 +5,7 @@ import Brand from '../models/Brand.js';
 import User from '../models/User.js';
 import NFT from '../models/NFT.js';
 import { verifyToken } from '../config/firebase.js';
+import { upload } from '../config/cloudinary.js';
 import blockchainService from '../services/blockchainService.js';
 
 const router = express.Router();
@@ -39,6 +40,28 @@ router.get('/:campaignId', verifyToken, async (req, res) => {
     res.json(campaign);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching campaign', error: error.message });
+  }
+});
+
+// Upload NFT image for campaign
+router.post('/upload-nft-image', verifyToken, upload.single('nftImage'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    console.log('✅ NFT image uploaded to Cloudinary:', req.file.path);
+
+    res.json({
+      imageUrl: req.file.path,
+      message: 'Image uploaded successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error uploading NFT image:', error);
+    res.status(500).json({
+      message: 'Error uploading image',
+      error: error.message
+    });
   }
 });
 
