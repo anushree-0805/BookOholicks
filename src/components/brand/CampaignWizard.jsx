@@ -232,15 +232,18 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
 
             <div>
               <label className="block text-sm font-medium text-[#4a6359] mb-2">
-                Description
+                Description <span className="text-gray-400 text-xs">(optional)</span>
               </label>
               <textarea
                 value={campaignData.description}
                 onChange={(e) => updateData('description', e.target.value)}
                 className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
                 rows="3"
-                placeholder="Describe your campaign..."
+                placeholder="Describe your campaign... (optional)"
               />
+              <div className="mt-1 text-xs text-gray-500">
+                If left empty, a default description will be generated.
+              </div>
             </div>
 
             {/* Phygital Fields */}
@@ -428,7 +431,22 @@ const CampaignWizard = ({ onClose, onSuccess }) => {
                   onChange={(e) => updateData('totalSupply', parseInt(e.target.value))}
                   className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
                   min="1"
+                  max="100"
                 />
+                {campaignData.totalSupply > 100 && (
+                  <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800">
+                    ⚠️ <strong>Warning:</strong> The smart contract limits batch pre-minting to 100 NFTs due to gas constraints.
+                    For campaigns with more than 100 NFTs, you'll need to either:
+                    <ul className="list-disc ml-5 mt-2">
+                      <li>Reduce the supply to 100 or less</li>
+                      <li>Use on-demand minting (not pre-minted)</li>
+                      <li>Contact support for custom solutions</li>
+                    </ul>
+                  </div>
+                )}
+                <div className="mt-1 text-xs text-gray-600">
+                  Recommended: 1-100 NFTs for pre-minting
+                </div>
               </div>
             )}
           </div>

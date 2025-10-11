@@ -13,7 +13,8 @@ const ProfileEdit = () => {
     interestedGenres: [],
     location: '',
     favoriteAuthor: '',
-    readingGoal: ''
+    readingGoal: '',
+    walletAddress: ''
   });
   const [previewImage, setPreviewImage] = useState(null);
 
@@ -27,7 +28,8 @@ const ProfileEdit = () => {
         interestedGenres: userProfile.interestedGenres || [],
         location: userProfile.location || '',
         favoriteAuthor: userProfile.favoriteAuthor || '',
-        readingGoal: userProfile.readingGoal || ''
+        readingGoal: userProfile.readingGoal || '',
+        walletAddress: userProfile.walletAddress || ''
       });
       if (userProfile.profilePic) {
         setPreviewImage(userProfile.profilePic);
@@ -81,7 +83,8 @@ const ProfileEdit = () => {
         interestedGenres: profileData.interestedGenres,
         location: profileData.location,
         favoriteAuthor: profileData.favoriteAuthor,
-        readingGoal: profileData.readingGoal
+        readingGoal: profileData.readingGoal,
+        walletAddress: profileData.walletAddress
       };
 
       // Update user profile
@@ -321,8 +324,69 @@ const ProfileEdit = () => {
           </div>
           <div className="flex items-center justify-between p-3 bg-[#f5f1e8] rounded-lg">
             <span className="font-medium">Wallet Connected</span>
-            <span className="text-[#4a6359]">Not Connected</span>
+            <span className={profileData.walletAddress ? "text-green-600" : "text-[#4a6359]"}>
+              {profileData.walletAddress ? '✓ Connected' : 'Not Connected'}
+            </span>
           </div>
+        </div>
+      </div>
+
+      {/* Wallet Connection Card */}
+      <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-[#d4a960]">
+        <h3 className="text-xl font-bold text-[#4a6359] mb-4 flex items-center gap-2">
+          <svg className="w-6 h-6 text-[#a56b8a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+          Wallet Connection (Required for NFT Claims)
+        </h3>
+
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>Important:</strong> You need to connect your wallet address to claim NFTs from campaigns.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-[#4a6359] mb-2">
+            Wallet Address (U2U Network)
+          </label>
+          {isEditing ? (
+            <div>
+              <input
+                type="text"
+                value={profileData.walletAddress}
+                onChange={(e) => setProfileData({ ...profileData, walletAddress: e.target.value })}
+                className="w-full px-4 py-2 border-2 border-[#d4a960] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a] bg-white font-mono text-sm"
+                placeholder="0x..."
+              />
+              <p className="mt-2 text-xs text-gray-600">
+                Enter your U2U wallet address. This is where your NFTs will be sent.
+              </p>
+            </div>
+          ) : (
+            <div>
+              {profileData.walletAddress ? (
+                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <span className="text-green-600">✓</span>
+                  <span className="font-mono text-sm text-gray-700">{profileData.walletAddress}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <span className="text-red-600">✗</span>
+                  <span className="text-sm text-red-700">No wallet connected. Click "Edit Profile" to add your wallet address.</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

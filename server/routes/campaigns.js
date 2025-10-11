@@ -45,8 +45,39 @@ router.get('/:campaignId', verifyToken, async (req, res) => {
 // Create new campaign
 router.post('/', verifyToken, async (req, res) => {
   try {
+    console.log('📝 Creating campaign with data:', JSON.stringify(req.body, null, 2));
+
+    // Validate required fields
+    if (!req.body.brandId || !req.body.campaignName || !req.body.campaignType) {
+      return res.status(400).json({
+        message: 'Missing required fields',
+        required: ['brandId', 'campaignName', 'campaignType']
+      });
+    }
+
+    // Provide default description if empty
+    if (!req.body.description || req.body.description.trim() === '') {
+      req.body.description = `${req.body.campaignName} - ${req.body.campaignType} campaign`;
+    }
+
+    // Check if brand exists, create if not
+    let brand = await Brand.findOne({ userId: req.body.brandId });
+    if (!brand) {
+      console.log(`⚠️  Brand not found for userId: ${req.body.brandId}, creating new brand...`);
+      brand = new Brand({
+        userId: req.body.brandId,
+        brandName: req.body.brandName || 'Unknown Brand',
+        name: req.body.brandName || 'Unknown Brand',
+        totalCampaigns: 0
+      });
+      await brand.save();
+      console.log('✅ Brand created:', brand._id);
+    }
+
+    // Create campaign
     const campaign = new Campaign(req.body);
     await campaign.save();
+    console.log('✅ Campaign created:', campaign._id);
 
     // Update brand's campaign count
     await Brand.findOneAndUpdate(
@@ -56,7 +87,15 @@ router.post('/', verifyToken, async (req, res) => {
 
     res.status(201).json(campaign);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating campaign', error: error.message });
+    console.error('❌ Error creating campaign:', error);
+    res.status(500).json({
+      message: 'Error creating campaign',
+      error: error.message,
+      details: error.errors ? Object.keys(error.errors).map(key => ({
+        field: key,
+        message: error.errors[key].message
+      })) : null
+    });
   }
 });
 
@@ -289,7 +328,7 @@ router.post('/:campaignId/reject', verifyToken, async (req, res) => {
   }
 });
 
-// Pre-mint NFTs to escrow wallet (for phygital campaigns)
+// Pre-mint NFTs to escrow wallet (for phygital campaigns) - ASYNC
 router.post('/:campaignId/pre-mint', verifyToken, async (req, res) => {
   try {
     const { escrowWallet } = req.body;
@@ -307,39 +346,173 @@ router.post('/:campaignId/pre-mint', verifyToken, async (req, res) => {
       return res.status(400).json({ message: 'NFTs already pre-minted for this campaign' });
     }
 
-    // Batch mint to escrow wallet
-    const result = await blockchainService.batchMintToEscrow(
-      escrowWallet,
-      campaign.totalSupply,
-      {
-        name: campaign.campaignName,
-        description: campaign.description,
-        category: campaign.category,
-        rarity: campaign.rarity,
-        brand: campaign.brandName,
-        benefits: campaign.benefits
-      }
-    );
-
-    if (!result.success) {
-      return res.status(500).json({ message: 'Blockchain minting failed', error: result.error });
+    if (campaign.blockchain.mintJobStatus === 'processing') {
+      return res.status(400).json({ message: 'Minting already in progress' });
     }
 
-    // Update campaign
-    campaign.blockchain.preMinted = true;
-    campaign.blockchain.preMintTransactionHash = result.transactionHash;
-    campaign.blockchain.tokenIds = result.tokenIds;
+    // Validate campaign is not unlimited
+    if (campaign.unlimited) {
+      return res.status(400).json({
+        message: 'Cannot pre-mint unlimited campaigns',
+        details: 'Unlimited campaigns should mint NFTs on-demand when claimed, not pre-minted to escrow'
+      });
+    }
+
+    // Validate quantity is within smart contract limits
+    const MAX_BATCH_SIZE = 100;
+    if (campaign.totalSupply > MAX_BATCH_SIZE) {
+      return res.status(400).json({
+        message: `Cannot pre-mint more than ${MAX_BATCH_SIZE} NFTs in a single batch`,
+        details: `Your campaign has ${campaign.totalSupply} NFTs. The smart contract limits batch minting to ${MAX_BATCH_SIZE} NFTs due to gas constraints. Please reduce the total supply or contact support for large campaigns.`,
+        currentSupply: campaign.totalSupply,
+        maxAllowed: MAX_BATCH_SIZE
+      });
+    }
+
+    // Validate quantity is reasonable (minimum 1)
+    if (campaign.totalSupply < 1) {
+      return res.status(400).json({
+        message: 'Total supply must be at least 1',
+        currentSupply: campaign.totalSupply
+      });
+    }
+
+    // Mark as processing and return immediately
+    campaign.blockchain.mintJobStatus = 'processing';
+    campaign.blockchain.mintJobStartedAt = new Date();
     campaign.blockchain.escrowWallet = escrowWallet;
-    campaign.minted = result.tokenIds.length;
+    campaign.blockchain.mintJobError = null;
+    await campaign.save();
+
+    // Return immediately - minting will happen in background
+    res.json({
+      message: 'Pre-minting started in background',
+      status: 'processing',
+      campaignId: campaign._id
+    });
+
+    // Process minting in background (no await here!)
+    (async () => {
+      try {
+        console.log(`🚀 Starting background mint for campaign ${campaign._id}`);
+
+        const result = await blockchainService.batchMintToEscrow(
+          escrowWallet,
+          campaign.totalSupply,
+          {
+            name: campaign.campaignName,
+            description: campaign.description,
+            category: campaign.category,
+            rarity: campaign.rarity,
+            brand: campaign.brandName,
+            benefits: campaign.benefits
+          }
+        );
+
+        // Reload campaign to get latest state
+        const updatedCampaign = await Campaign.findById(campaign._id);
+
+        if (!result.success) {
+          // Save transaction hash even on timeout/failure for manual verification
+          if (result.transactionHash) {
+            updatedCampaign.blockchain.preMintTransactionHash = result.transactionHash;
+          }
+
+          // If transaction is pending (not failed), mark as pending instead of failed
+          if (result.isPending) {
+            updatedCampaign.blockchain.mintJobStatus = 'pending';
+            updatedCampaign.blockchain.mintJobError = result.error + ' Transaction Hash: ' + result.transactionHash;
+          } else {
+            updatedCampaign.blockchain.mintJobStatus = 'failed';
+            updatedCampaign.blockchain.mintJobError = result.error;
+          }
+
+          await updatedCampaign.save();
+          console.error(`❌ Background mint failed for campaign ${campaign._id}:`, result.error);
+          return;
+        }
+
+        // Update campaign with success
+        updatedCampaign.blockchain.preMinted = true;
+        updatedCampaign.blockchain.preMintTransactionHash = result.transactionHash;
+        updatedCampaign.blockchain.tokenIds = result.tokenIds;
+        updatedCampaign.blockchain.mintJobStatus = 'completed';
+        updatedCampaign.blockchain.mintJobCompletedAt = new Date();
+        updatedCampaign.minted = result.tokenIds.length;
+        await updatedCampaign.save();
+
+        console.log(`✅ Background mint completed for campaign ${campaign._id}`);
+      } catch (error) {
+        console.error(`❌ Background mint error for campaign ${campaign._id}:`, error);
+
+        try {
+          const updatedCampaign = await Campaign.findById(campaign._id);
+          updatedCampaign.blockchain.mintJobStatus = 'failed';
+          updatedCampaign.blockchain.mintJobError = error.message;
+          await updatedCampaign.save();
+        } catch (updateError) {
+          console.error('Failed to update campaign status:', updateError);
+        }
+      }
+    })();
+
+  } catch (error) {
+    res.status(500).json({ message: 'Error starting pre-mint', error: error.message });
+  }
+});
+
+// Get pre-mint status
+router.get('/:campaignId/pre-mint-status', verifyToken, async (req, res) => {
+  try {
+    const campaign = await Campaign.findById(req.params.campaignId);
+
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found' });
+    }
+
+    res.json({
+      status: campaign.blockchain.mintJobStatus,
+      preMinted: campaign.blockchain.preMinted,
+      transactionHash: campaign.blockchain.preMintTransactionHash,
+      tokenCount: campaign.blockchain.tokenIds?.length || 0,
+      error: campaign.blockchain.mintJobError,
+      startedAt: campaign.blockchain.mintJobStartedAt,
+      completedAt: campaign.blockchain.mintJobCompletedAt
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching pre-mint status', error: error.message });
+  }
+});
+
+// Manually verify and complete pre-mint (for when transaction succeeded but confirmation timed out)
+router.post('/:campaignId/verify-pre-mint', verifyToken, async (req, res) => {
+  try {
+    const { tokenIds } = req.body; // Array of token IDs minted
+    const campaign = await Campaign.findById(req.params.campaignId);
+
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found' });
+    }
+
+    if (!campaign.blockchain.preMintTransactionHash) {
+      return res.status(400).json({ message: 'No transaction hash found for this campaign' });
+    }
+
+    // Mark as completed with provided token IDs
+    campaign.blockchain.preMinted = true;
+    campaign.blockchain.tokenIds = tokenIds;
+    campaign.blockchain.mintJobStatus = 'completed';
+    campaign.blockchain.mintJobCompletedAt = new Date();
+    campaign.blockchain.mintJobError = null;
+    campaign.minted = tokenIds.length;
     await campaign.save();
 
     res.json({
-      message: 'NFTs pre-minted successfully',
-      tokenIds: result.tokenIds,
-      transactionHash: result.transactionHash
+      message: 'Pre-mint verified and marked as complete',
+      campaign
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error pre-minting NFTs', error: error.message });
+    res.status(500).json({ message: 'Error verifying pre-mint', error: error.message });
   }
 });
 

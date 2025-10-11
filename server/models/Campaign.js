@@ -22,7 +22,7 @@ const campaignSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: true
+    default: ''
   },
   nftImage: {
     type: String,
@@ -152,15 +152,47 @@ const campaignSchema = new mongoose.Schema({
   },
   // Blockchain
   blockchain: {
-    contractAddress: String,
-    chainId: Number,
+    contractAddress: {
+      type: String,
+      default: null
+    },
+    chainId: {
+      type: Number,
+      default: null
+    },
     preMinted: {
       type: Boolean,
       default: false
     },
-    preMintTransactionHash: String,
-    tokenIds: [String], // For pre-minted NFTs
-    escrowWallet: String // Wallet holding pre-minted NFTs
+    preMintTransactionHash: {
+      type: String,
+      default: null
+    },
+    tokenIds: {
+      type: [String],
+      default: []
+    }, // For pre-minted NFTs
+    escrowWallet: {
+      type: String,
+      default: null
+    }, // Wallet holding pre-minted NFTs
+    mintJobStatus: {
+      type: String,
+      enum: ['idle', 'pending', 'processing', 'completed', 'failed'],
+      default: 'idle'
+    },
+    mintJobError: {
+      type: String,
+      default: null
+    },
+    mintJobStartedAt: {
+      type: Date,
+      default: null
+    },
+    mintJobCompletedAt: {
+      type: Date,
+      default: null
+    }
   },
   startDate: {
     type: Date,

@@ -20,19 +20,28 @@ router.post('/:campaignId/claim', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'Campaign not found' });
     }
 
+    console.log(`🎯 Claim request for campaign ${campaignId} by user ${userId}`);
+    console.log(`📊 Campaign status: ${campaign.status}, Claimed: ${campaign.claimed}/${campaign.totalSupply}`);
+
     // Check campaign is active
     if (campaign.status !== 'active') {
-      return res.status(400).json({ message: 'Campaign is not active' });
+      console.log(`❌ Campaign is not active. Status: ${campaign.status}`);
+      return res.status(400).json({ message: `Campaign is not active. Current status: ${campaign.status}` });
     }
 
     // Check NFTs available
     if (!campaign.unlimited && campaign.claimed >= campaign.totalSupply) {
+      console.log(`❌ No NFTs remaining. Claimed: ${campaign.claimed}, Supply: ${campaign.totalSupply}`);
       return res.status(400).json({ message: 'No NFTs remaining' });
     }
 
     // Check eligibility
+    console.log(`🔍 Checking eligibility for user ${userId}...`);
     const eligibilityResult = await checkEligibility(userId, campaign);
+    console.log(`✓ Eligibility result:`, eligibilityResult);
+
     if (!eligibilityResult.eligible) {
+      console.log(`❌ User not eligible: ${eligibilityResult.reason}`);
       return res.status(403).json({
         message: 'Not eligible for this campaign',
         reason: eligibilityResult.reason
@@ -42,14 +51,32 @@ router.post('/:campaignId/claim', verifyToken, async (req, res) => {
     // Check if user already claimed (also checked in eligibility service, but double-check here)
     const existingClaim = await CampaignClaim.findOne({ campaignId, userId });
     if (existingClaim) {
+      console.log(`❌ User already claimed this campaign`);
       return res.status(400).json({ message: 'You have already claimed this campaign' });
     }
 
     // Get user wallet
+    console.log(`🔍 Looking up user record for userId: ${userId}`);
     const user = await User.findOne({ userId });
-    if (!user?.walletAddress) {
-      return res.status(400).json({ message: 'Please connect your wallet first' });
+    console.log(`📝 User found:`, user ? `Yes (wallet: ${user.walletAddress || 'none'})` : 'No');
+
+    if (!user) {
+      console.log(`❌ User record not found in database`);
+      return res.status(400).json({
+        message: 'User profile not found. Please complete your profile setup.',
+        hint: 'Create a user record with your wallet address first'
+      });
     }
+
+    if (!user.walletAddress) {
+      console.log(`❌ User has no wallet address set`);
+      return res.status(400).json({
+        message: 'Please connect your wallet first',
+        hint: 'Set your wallet address in your profile to claim NFTs'
+      });
+    }
+
+    console.log(`✅ All checks passed. Proceeding with claim...`);
 
     // Create claim record
     const claim = new CampaignClaim({

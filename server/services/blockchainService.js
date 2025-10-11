@@ -176,15 +176,18 @@ class BlockchainService {
       const rarityEnum = this.getRarityEnum(rarity);
       const rewardTypeEnum = this.getRewardTypeEnum(rewardType);
 
+      // Validate address to prevent ENS resolution attempts
+      const validatedUserWallet = ethers.getAddress(userWalletAddress);
+
       console.log('🔨 Minting NFT:', {
-        to: userWalletAddress,
+        to: validatedUserWallet,
         name,
         rewardType,
         rarity
       });
 
       const tx = await this.contract.mintNFT(
-        userWalletAddress,
+        validatedUserWallet,
         name,
         description,
         categoryEnum,
@@ -234,7 +237,10 @@ class BlockchainService {
     }
 
     try {
-      const tokenIds = await this.contract.getTokensByOwner(userWalletAddress);
+      // Validate address to prevent ENS resolution attempts
+      const validatedUserWallet = ethers.getAddress(userWalletAddress);
+
+      const tokenIds = await this.contract.getTokensByOwner(validatedUserWallet);
 
       const nfts = [];
       for (const tokenId of tokenIds) {
@@ -311,8 +317,11 @@ class BlockchainService {
     }
 
     try {
+      // Validate address to prevent ENS resolution attempts
+      const validatedUserWallet = ethers.getAddress(userWalletAddress);
+
       const rewardTypeEnum = this.getRewardTypeEnum(rewardType);
-      const hasIt = await this.contract.hasReward(rewardTypeEnum, userWalletAddress);
+      const hasIt = await this.contract.hasReward(rewardTypeEnum, validatedUserWallet);
       return hasIt;
     } catch (error) {
       console.error('❌ Error checking reward:', error);
@@ -338,14 +347,48 @@ class BlockchainService {
       const categoryEnum = this.getCategoryEnum(category);
       const rarityEnum = this.getRarityEnum(rarity);
 
+      // Ensure the escrow wallet address is properly formatted
+      // This prevents ethers.js from trying to resolve it as an ENS name
+      const validatedEscrowWallet = ethers.getAddress(escrowWallet);
+
       console.log('🔨 Batch minting to escrow:', {
-        escrowWallet,
+        escrowWallet: validatedEscrowWallet,
         quantity,
         name
       });
 
-      const tx = await this.contract.batchMintToEscrow(
-        escrowWallet,
+      // Check wallet balance before minting
+      const balance = await this.provider.getBalance(this.wallet.address);
+      console.log('💰 Wallet balance:', ethers.formatEther(balance), 'U2U');
+
+      if (balance === 0n) {
+        throw new Error('Insufficient funds in wallet. Please fund the wallet with U2U tokens.');
+      }
+
+      console.log('📡 Sending transaction to blockchain...');
+
+      // Estimate gas to ensure transaction will succeed
+      try {
+        const gasEstimate = await this.contract.batchMintToEscrow.estimateGas(
+          validatedEscrowWallet,
+          quantity,
+          name,
+          description,
+          categoryEnum,
+          rarityEnum,
+          brand,
+          benefits || [],
+          '' // tokenURI
+        );
+        console.log('⛽ Estimated gas:', gasEstimate.toString());
+      } catch (gasError) {
+        console.warn('⚠️  Gas estimation failed:', gasError.message);
+        console.log('Attempting transaction anyway...');
+      }
+
+      // Add a timeout wrapper for the transaction
+      const txPromise = this.contract.batchMintToEscrow(
+        validatedEscrowWallet,
         quantity,
         name,
         description,
@@ -356,7 +399,68 @@ class BlockchainService {
         '' // tokenURI
       );
 
-      const receipt = await tx.wait();
+      // Wait for transaction with a timeout (30 seconds)
+      const tx = await Promise.race([
+        txPromise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Transaction timeout: Network might be slow or unresponsive')), 30000)
+        )
+      ]);
+
+      const txHash = tx.hash; // Store hash before waiting
+      console.log('⏳ Transaction sent! Hash:', txHash);
+      console.log('⏳ Waiting for confirmation... (this may take 2-5 minutes on testnet)');
+      console.log(`🔍 View transaction: https://testnet.u2uscan.xyz/tx/${txHash}`);
+
+      // Wait for confirmation with a longer timeout (20 minutes for slow testnets)
+      // We'll wait for 1 confirmation to be faster
+      let receipt;
+      try {
+        const receiptPromise = tx.wait(1); // Wait for 1 confirmation only
+        receipt = await Promise.race([
+          receiptPromise,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Block confirmation timeout: Transaction may still be pending. Check the block explorer.')), 1200000)
+          )
+        ]);
+        console.log('✅ Transaction confirmed in block:', receipt.blockNumber);
+      } catch (timeoutError) {
+        console.error('⏱️ Timeout waiting for confirmation:', timeoutError.message);
+
+        // Try to fetch the transaction receipt one more time to see if it was actually mined
+        console.log('🔍 Attempting to fetch transaction receipt...');
+        try {
+          const finalReceipt = await this.provider.getTransactionReceipt(txHash);
+          if (finalReceipt && finalReceipt.status === 1) {
+            console.log('✅ Transaction was actually confirmed! Block:', finalReceipt.blockNumber);
+            receipt = finalReceipt;
+            // Continue with normal flow - don't return here
+          } else if (finalReceipt && finalReceipt.status === 0) {
+            // Transaction failed on-chain
+            return {
+              success: false,
+              error: 'Transaction failed on blockchain',
+              transactionHash: txHash
+            };
+          } else {
+            // Transaction still pending
+            return {
+              success: false,
+              error: 'Transaction is still pending after timeout. Please check the block explorer and use the verify-pre-mint endpoint once confirmed.',
+              transactionHash: txHash,
+              isPending: true
+            };
+          }
+        } catch (receiptError) {
+          console.error('❌ Failed to fetch receipt:', receiptError.message);
+          return {
+            success: false,
+            error: timeoutError.message,
+            transactionHash: txHash,
+            isPending: true
+          };
+        }
+      }
 
       // Extract token IDs from events
       const tokenIds = [];
@@ -396,15 +500,19 @@ class BlockchainService {
     }
 
     try {
+      // Validate addresses to prevent ENS resolution attempts
+      const validatedEscrowWallet = ethers.getAddress(escrowWallet);
+      const validatedUserWallet = ethers.getAddress(userWallet);
+
       console.log('📤 Transferring from escrow:', {
-        from: escrowWallet,
-        to: userWallet,
+        from: validatedEscrowWallet,
+        to: validatedUserWallet,
         tokenId
       });
 
       const tx = await this.contract.transferFromEscrow(
-        escrowWallet,
-        userWallet,
+        validatedEscrowWallet,
+        validatedUserWallet,
         tokenId
       );
 

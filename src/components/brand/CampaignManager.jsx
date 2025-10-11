@@ -43,7 +43,7 @@ const CampaignManager = ({ onCreateNew }) => {
     }
   };
 
-  // Pre-mint NFTs
+  // Pre-mint NFTs (asynchronous with status polling)
   const handlePreMint = async (campaign) => {
     try {
       // For now, use platform wallet as escrow (you can make this configurable)
@@ -52,15 +52,60 @@ const CampaignManager = ({ onCreateNew }) => {
 
       const walletToUse = escrowWallet || '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'; // Default platform wallet
 
+      // Start the pre-mint process (returns immediately)
       const response = await api.post(`/campaigns/${campaign._id}/pre-mint`, {
         escrowWallet: walletToUse
       });
 
-      alert(`Successfully pre-minted ${response.data.tokenIds.length} NFTs!\nTransaction: ${response.data.transactionHash}`);
-      fetchCampaigns();
+      alert(`Pre-minting started! This will take 1-2 minutes.\n\nRefresh the page to see progress.`);
+
+      // Start polling for status
+      pollPreMintStatus(campaign._id);
     } catch (error) {
-      alert('Error pre-minting: ' + (error.response?.data?.message || error.message));
+      alert('Error starting pre-mint: ' + (error.response?.data?.message || error.message));
     }
+  };
+
+  // Poll for pre-mint status
+  const pollPreMintStatus = async (campaignId) => {
+    const maxAttempts = 60; // Poll for 5 minutes max (5 second intervals)
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const response = await api.get(`/campaigns/${campaignId}/pre-mint-status`);
+        const { status, preMinted, tokenCount, error, transactionHash } = response.data;
+
+        if (status === 'completed' && preMinted) {
+          // Success!
+          alert(`✅ Pre-minting completed!\n\n${tokenCount} NFTs minted successfully.\n\nTransaction: ${transactionHash}`);
+          fetchCampaigns();
+          return;
+        } else if (status === 'failed') {
+          // Failed - but might have transaction hash for manual verification
+          if (transactionHash) {
+            alert(`⏱️ Transaction confirmation timeout\n\nThe transaction was sent but confirmation is taking longer than expected.\n\nTransaction Hash: ${transactionHash}\n\nPlease check the block explorer to verify if the transaction succeeded:\nhttps://testnet.u2uscan.xyz/tx/${transactionHash}\n\nError: ${error}`);
+          } else {
+            alert(`❌ Pre-minting failed:\n\n${error}`);
+          }
+          fetchCampaigns();
+          return;
+        } else if (status === 'processing' && attempts < maxAttempts) {
+          // Still processing, continue polling
+          attempts++;
+          setTimeout(poll, 5000); // Poll every 5 seconds
+        } else if (attempts >= maxAttempts) {
+          alert('⏱️ Pre-minting is taking longer than expected.\n\nPlease refresh the page to check status.');
+          fetchCampaigns();
+        }
+      } catch (error) {
+        console.error('Error polling status:', error);
+        // Stop polling on error
+      }
+    };
+
+    // Start polling
+    poll();
   };
 
   // Activate campaign
@@ -289,18 +334,46 @@ const CampaignManager = ({ onCreateNew }) => {
               {/* Approved Status - Pre-Mint & Activate */}
               {campaign.status === 'approved' && (
                 <>
-                  {!campaign.blockchain?.preMinted ? (
+                  {/* Show warning for unlimited campaigns */}
+                  {campaign.unlimited && (
+                    <div className="w-full px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg text-center text-xs">
+                      ⚠️ Unlimited campaigns cannot be pre-minted. NFTs will be minted on-demand when claimed.
+                    </div>
+                  )}
+
+                  {/* Show warning for large campaigns */}
+                  {!campaign.unlimited && campaign.totalSupply > 100 && (
+                    <div className="w-full px-3 py-2 bg-orange-100 text-orange-800 rounded-lg text-center text-xs">
+                      ⚠️ Campaign exceeds 100 NFT limit. Cannot pre-mint. Please reduce supply or contact support.
+                    </div>
+                  )}
+
+                  {campaign.blockchain?.mintJobStatus === 'processing' ? (
+                    <div className="w-full px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-center text-sm font-medium animate-pulse">
+                      ⏳ Minting in progress... (1-2 min)
+                    </div>
+                  ) : !campaign.blockchain?.preMinted && !campaign.unlimited && campaign.totalSupply <= 100 ? (
                     <button
                       onClick={() => handlePreMint(campaign)}
                       className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all"
                     >
-                      🔨 Pre-Mint NFTs
+                      🔨 Pre-Mint {campaign.totalSupply} NFT{campaign.totalSupply !== 1 ? 's' : ''}
                     </button>
-                  ) : (
+                  ) : campaign.blockchain?.preMinted ? (
                     <>
                       <div className="w-full px-3 py-2 bg-green-100 text-green-800 rounded-lg text-center text-sm font-medium">
                         ✅ {campaign.blockchain.tokenIds?.length || campaign.minted} NFTs Pre-Minted
                       </div>
+                      {campaign.blockchain?.preMintTransactionHash && (
+                        <a
+                          href={`https://testnet.u2uscan.xyz/tx/${campaign.blockchain.preMintTransactionHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full px-3 py-2 text-xs text-blue-600 hover:text-blue-800 text-center underline"
+                        >
+                          View Transaction
+                        </a>
+                      )}
                       <button
                         onClick={() => handleActivate(campaign._id)}
                         className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
@@ -308,6 +381,10 @@ const CampaignManager = ({ onCreateNew }) => {
                         🚀 Activate Campaign
                       </button>
                     </>
+                  ) : (
+                    <div className="w-full px-3 py-2 bg-red-100 text-red-800 rounded-lg text-center text-sm font-medium">
+                      ❌ Pre-Minting Failed
+                    </div>
                   )}
                 </>
               )}
