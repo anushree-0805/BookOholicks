@@ -32,6 +32,7 @@ import milestonesRouter from './routes/milestones.js';
 import eventsRouter from './routes/events.js';
 import rewardsRouter from './routes/rewards.js';
 import blockchainRouter from './routes/blockchain.js';
+import sharedNFTsRouter from './routes/sharedNFTs.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -59,6 +60,7 @@ app.use('/api/milestones', milestonesRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/rewards', rewardsRouter);
 app.use('/api/blockchain', blockchainRouter);
+app.use('/api/shared-nfts', sharedNFTsRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

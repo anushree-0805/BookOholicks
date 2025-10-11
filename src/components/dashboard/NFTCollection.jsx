@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNFTs } from '../../hooks/useNFTs';
+import { useAuth } from '../../hooks/useAuth';
+import api from '../../config/api';
 
 const NFTCollection = ({ preview = false }) => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [selectedNFT, setSelectedNFT] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareCaption, setShareCaption] = useState('');
+  const [sharing, setSharing] = useState(false);
   const { nfts, loading, redeemNFT } = useNFTs();
+  const { user } = useAuth();
 
   // Mock NFT data - will be replaced with blockchain data
   const nftCollection = [
@@ -135,6 +141,37 @@ const NFTCollection = ({ preview = false }) => {
     }
   };
 
+  const handleShareClick = (nft) => {
+    setSelectedNFT(nft);
+    setShowShareModal(true);
+    setShareCaption('');
+  };
+
+  const handleShare = async () => {
+    if (!selectedNFT) return;
+
+    try {
+      setSharing(true);
+      const response = await api.post('/shared-nfts', {
+        nftId: selectedNFT._id || selectedNFT.id,
+        caption: shareCaption
+      });
+
+      alert('NFT shared successfully to the community!');
+      setShowShareModal(false);
+      setShareCaption('');
+    } catch (error) {
+      console.error('Error sharing NFT:', error);
+      if (error.response?.status === 400 && error.response?.data?.message?.includes('already shared')) {
+        alert('You have already shared this NFT. You can view it in the Community Gallery!');
+      } else {
+        alert('Error sharing NFT: ' + (error.response?.data?.message || error.message));
+      }
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const getRarityColor = (rarity) => {
     switch (rarity) {
       case 'Common': return 'bg-gray-200 text-gray-700';
@@ -222,8 +259,12 @@ const NFTCollection = ({ preview = false }) => {
               className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all cursor-pointer transform hover:-translate-y-1"
             >
               {/* NFT Image */}
-              <div className="bg-gradient-to-br from-[#f5f1e8] to-[#faf7f0] h-48 flex items-center justify-center text-7xl border-b-4 border-[#d4a960]">
-                {nft.image}
+              <div className="bg-gradient-to-br from-[#f5f1e8] to-[#faf7f0] h-48 flex items-center justify-center border-b-4 border-[#d4a960] overflow-hidden">
+                {nft.image && nft.image.startsWith('http') ? (
+                  <img src={nft.image} alt={nft.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-7xl">{nft.image || '📦'}</span>
+                )}
               </div>
 
               {/* NFT Info */}
@@ -299,8 +340,12 @@ const NFTCollection = ({ preview = false }) => {
 
             <div className="p-6 space-y-6">
               {/* NFT Image */}
-              <div className="bg-gradient-to-br from-[#f5f1e8] to-[#faf7f0] rounded-2xl h-64 flex items-center justify-center text-9xl border-4 border-[#d4a960]">
-                {selectedNFT.image}
+              <div className="bg-gradient-to-br from-[#f5f1e8] to-[#faf7f0] rounded-2xl h-64 flex items-center justify-center border-4 border-[#d4a960] overflow-hidden">
+                {selectedNFT.image && selectedNFT.image.startsWith('http') ? (
+                  <img src={selectedNFT.image} alt={selectedNFT.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-9xl">{selectedNFT.image || '📦'}</span>
+                )}
               </div>
 
               {/* NFT Info */}
@@ -393,6 +438,15 @@ const NFTCollection = ({ preview = false }) => {
                 >
                   {selectedNFT.redeemed ? '✓ Already Redeemed' : '🎁 Redeem Benefits'}
                 </button>
+                <button
+                  onClick={() => handleShareClick(selectedNFT)}
+                  className="px-6 py-3 bg-[#d4a960] text-white rounded-lg font-medium hover:bg-[#c99a50] transition-all flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  Share
+                </button>
                 {selectedNFT.onChain && (
                   <button
                     onClick={() => window.open(`https://testnet.u2uscan.xyz/token/${process.env.NFT_CONTRACT_ADDRESS}?a=${selectedNFT.tokenId}`, '_blank')}
@@ -401,6 +455,113 @@ const NFTCollection = ({ preview = false }) => {
                     View on Chain
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && selectedNFT && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl">
+            <div className="bg-gradient-to-r from-[#d4a960] to-[#c99a50] p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  Share Your NFT
+                </h3>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="text-white hover:text-gray-200 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* NFT Preview */}
+              <div className="bg-gradient-to-br from-[#f5f1e8] to-[#faf7f0] rounded-xl p-4 border-2 border-[#d4a960]">
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+                    {selectedNFT.image && selectedNFT.image.startsWith('http') ? (
+                      <img src={selectedNFT.image} alt={selectedNFT.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-4xl">{selectedNFT.image || '📦'}</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-[#4a6359]">{selectedNFT.name}</h4>
+                    <p className="text-sm text-[#6b7f75]">{selectedNFT.rarity} • {selectedNFT.brand}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Caption Input */}
+              <div>
+                <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                  Add a caption (optional)
+                </label>
+                <textarea
+                  value={shareCaption}
+                  onChange={(e) => setShareCaption(e.target.value)}
+                  placeholder="Tell the community about your achievement..."
+                  className="w-full px-4 py-3 border-2 border-[#d4a960] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a] bg-white resize-none"
+                  rows="4"
+                  maxLength="500"
+                />
+                <p className="text-xs text-[#6b7f75] mt-1 text-right">{shareCaption.length}/500</p>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-700">
+                      Sharing your NFT will display it in the Community Gallery where other users can see and appreciate your achievements!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  disabled={sharing}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleShare}
+                  disabled={sharing}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-[#d4a960] to-[#c99a50] text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {sharing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Sharing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Share to Community
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>

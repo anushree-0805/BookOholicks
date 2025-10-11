@@ -9,6 +9,7 @@ import Home from './pages/Home'
 import GlobalFeed from './pages/GlobalFeed'
 import Communities from './pages/Communities'
 import CommunityDetail from './pages/CommunityDetail'
+import NFTGallery from './components/community/NFTGallery'
 import RewardNotification from './components/common/RewardNotification'
 import { useRewardNotifications } from './hooks/useRewardNotifications'
 
@@ -26,6 +27,7 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/campaigns" element={<ActiveCampaigns />} />
           <Route path="/feed" element={<GlobalFeed />} />
+          <Route path="/nft-gallery" element={<NFTGallery />} />
           <Route path="/communities" element={<Communities />} />
           <Route path="/communities/:communityId" element={<CommunityDetail />} />
         </Routes>

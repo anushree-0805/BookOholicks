@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Book, TrendingUp, Award, User } from 'lucide-react';
+import { Book, TrendingUp, Award, User, Share2 } from 'lucide-react';
 import ProfileEdit from '../components/dashboard/ProfileEdit';
 import ReadingStreak from '../components/dashboard/ReadingStreak';
 import NFTCollection from '../components/dashboard/NFTCollection';
+import MySharedNFTs from '../components/dashboard/MySharedNFTs';
 import Overview from '../components/dashboard/Overview';
 import WalletConnect from '../components/dashboard/WalletConnect';
 
@@ -79,7 +80,18 @@ const Dashboard = () => {
               }`}
             >
               <Award className="w-4 h-4" />
-              NFT Collection
+              My NFTs
+            </button>
+            <button
+              onClick={() => setActiveTab('shared-nfts')}
+              className={`py-4 px-1 font-medium text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
+                activeTab === 'shared-nfts'
+                  ? 'border-[#4a6359] text-[#4a6359]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Share2 className="w-4 h-4" />
+              Shared NFTs
             </button>
           </nav>
         </div>
@@ -96,6 +108,7 @@ const Dashboard = () => {
             <NFTCollection />
           </div>
         )}
+        {activeTab === 'shared-nfts' && <MySharedNFTs />}
       </div>
     </div>
   );
