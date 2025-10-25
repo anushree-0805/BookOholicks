@@ -1,4 +1,4 @@
-# 📚 Bookoholics - Web3 Book Community Platform
+# 📚 Readora - Web3 Book Community Platform
 
 A decentralized social platform for book lovers that rewards reading engagement with NFTs and blockchain-based rewards. Built with React, Node.js, MongoDB, and Ethereum smart contracts.
 
@@ -6,9 +6,9 @@ A decentralized social platform for book lovers that rewards reading engagement 
 
 ## 🌟 Platform Overview
 
-**Bookoholics** is a comprehensive web3-enabled book community platform that revolutionizes how readers engage with books, brands, and each other. By combining social networking features with blockchain technology, the platform creates a thriving ecosystem where reading habits are rewarded, communities flourish, and brands can meaningfully connect with their audience through innovative NFT campaigns and loyalty programs.
+**Readora** is a comprehensive web3-enabled book community platform that revolutionizes how readers engage with books, brands, and each other. By combining social networking features with blockchain technology, the platform creates a thriving ecosystem where reading habits are rewarded, communities flourish, and brands can meaningfully connect with their audience through innovative NFT campaigns and loyalty programs.
 
-### What Makes Bookoholics Unique
+### What Makes Readora Unique
 
 **For Readers:**
 - Transform your daily reading habit into tangible rewards through blockchain-verified NFT badges
@@ -91,7 +91,7 @@ A decentralized social platform for book lovers that rewards reading engagement 
 - **Admin Dashboard** - Campaign approvals, platform moderation, ecosystem oversight
 - **Role-Based Access** - Secure authentication with Firebase and role-specific permissions
 
-### The Bookoholics Ecosystem
+### The Readora Ecosystem
 
 The platform creates a three-way value exchange:
 
