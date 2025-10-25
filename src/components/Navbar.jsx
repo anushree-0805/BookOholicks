@@ -85,26 +85,28 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <img src={logo} alt="Logo" width={100} height={100} />
             </div>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-              <a
+              
+              {user && (
+                <>
+                <a
                 href="/"
                 className="text-[#4a6359] hover:text-[#427898] px-3 py-2 text-sm font-medium transition-colors"
               >
                 Home
               </a>
-              {user && (
-                <>
                   <a
                     href={userProfile?.accountType === 'brand' ? '/brand-dashboard' : '/dashboard'}
                     className="text-[#4a6359] hover:text-[#995a90] px-3 py-2 text-sm font-medium transition-colors"
                   >
                     Dashboard
                   </a>
+
                   <a
                     href="/campaigns"
                     className="text-[#4a6359] hover:text-[#995a90] px-3 py-2 text-sm font-medium transition-colors relative"
@@ -142,7 +144,7 @@ const Navbar = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="bg-[#d4a960] text-[#4a6359] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#995a90] transition-all flex items-center gap-2"
+                    className="bg-[#427898]  px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#995a90] transition-all flex items-center gap-2"
                   >
                     <svg
                       className="w-5 h-5"
@@ -182,24 +184,20 @@ const Navbar = () => {
                 </button>
               ) : (
                 <div className="relative">
-                  <button
-                    onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="bg-[#427898] text-white p-2 rounded-full hover:bg-[#995a90] transition-all"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                  </button>
+              <button
+  onClick={() => setShowProfileMenu(!showProfileMenu)}
+ className="relative w-10 h-10 rounded-full overflow-hidden border border-white bg-[#427898] hover:bg-[#995a90] transition-all flex items-center justify-center"
+
+>
+  <img
+    src="src/assets/user.png"
+   
+    className="absolute inset-0 w-full h-full object-cover"
+  />
+</button>
+
+
+
                   {showProfileMenu && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
                       <div className="px-4 py-2 text-sm text-[#4a6359] border-b">
@@ -219,7 +217,7 @@ const Navbar = () => {
 
             {/* Mobile menu button */}
             <div className="md:hidden">
-              <button className="text-[#4a6359] hover:text-[#427898]">
+              <button className="text-[#427898] ">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -241,10 +239,10 @@ const Navbar = () => {
 
       {/* Auth Modal */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+        <div className="fixed inset-0   flex items-center justify-center z-50 ">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 border-2 border-black">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-[#4a6359]">
+              <h2 className="text-2xl font-bold text-[#427898]">
                 {isSignIn ? 'Sign In' : 'Sign Up'}
               </h2>
               <button
@@ -252,7 +250,7 @@ const Navbar = () => {
                   setIsAuthModalOpen(false);
                   setError('');
                 }}
-                className="text-[#4a6359] hover:text-[#427898]"
+                className="text-[#427898] hover:text-[#4a6359]"
               >
                 <svg
                   className="h-6 w-6"
@@ -278,28 +276,28 @@ const Navbar = () => {
 
             <form onSubmit={handleAuth} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                <label className="block text-sm font-medium text-[#427898] mb-2">
                   Email
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#427898]"
+                  className="w-full px-4 py-2 border border-[#427898] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#427898]"
                   placeholder="Enter your email"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                <label className="block text-sm font-medium text-[#427898] mb-2">
                   Password
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#427898]"
+                  className="w-full px-4 py-2 border border-[#427898] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#427898]"
                   placeholder="Enter your password"
                   required
                 />
@@ -308,21 +306,21 @@ const Navbar = () => {
               {!isSignIn && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                    <label className="block text-sm font-medium text-[#427898] mb-2">
                       Confirm Password
                     </label>
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#427898]"
+                      className="w-full px-4 py-2 border border-[#427898] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#427898]"
                       placeholder="Confirm your password"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#4a6359] mb-2">
+                    <label className="block text-sm font-medium text-[#427898] mb-2">
                       Account Type
                     </label>
                     <div className="grid grid-cols-2 gap-3">
@@ -331,14 +329,14 @@ const Navbar = () => {
                         onClick={() => setAccountType('reader')}
                         className={`p-4 border-2 rounded-lg transition-all ${
                           accountType === 'reader'
-                            ? 'border-[#4a6359] bg-[#4a6359] bg-opacity-10'
-                            : 'border-gray-300 hover:border-[#4a6359]'
+                            ? 'border-[#4a6359] bg-[#427898] bg-opacity-10'
+                            : 'border-gray-300 hover:border-[#427898]'
                         }`}
                       >
                         <div className="text-center">
                           <div className="text-2xl mb-1">📚</div>
                           <div className="font-medium text-sm">Reader</div>
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-xs text-white mt-1">
                             Track reading & earn NFTs
                           </div>
                         </div>
@@ -355,7 +353,7 @@ const Navbar = () => {
                         <div className="text-center">
                           <div className="text-2xl mb-1">🏢</div>
                           <div className="font-medium text-sm">Brand</div>
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-xs text-white mt-1">
                             Create NFT campaigns
                           </div>
                         </div>
@@ -379,7 +377,7 @@ const Navbar = () => {
                   setIsSignIn(!isSignIn);
                   setError('');
                 }}
-                className="text-sm text-[#4a6359] hover:text-[#427898]"
+                className="text-sm text-[#427898] "
               >
                 {isSignIn
                   ? "Don't have an account? Sign Up"
