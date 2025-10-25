@@ -12,6 +12,7 @@ import CommunityDetail from './pages/CommunityDetail'
 import NFTGallery from './components/community/NFTGallery'
 import RewardNotification from './components/common/RewardNotification'
 import { useRewardNotifications } from './hooks/useRewardNotifications'
+import Footer from './components/Footer'
 
 function App() {
   const { notification, closeNotification } = useRewardNotifications();
@@ -31,6 +32,7 @@ function App() {
           <Route path="/communities" element={<Communities />} />
           <Route path="/communities/:communityId" element={<CommunityDetail />} />
         </Routes>
+        <Footer/>
 
         {/* Reward Notifications */}
         {notification && (
