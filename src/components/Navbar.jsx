@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/logo.jpg';
+import logo from '../assets/logo.png';
 import { useAuth } from '../hooks/useAuth';
 
 const Navbar = () => {
@@ -81,19 +81,19 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="bg-white shadow-md">
+      <nav className="bg-[#f9fff1] shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex-shrink-0">
-              <img src={logo} alt="Logo" className="h-12 w-auto" />
+              <img src={logo} alt="Logo" width={100} height={100} />
             </div>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
               <a
                 href="/"
-                className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors"
+                className="text-[#4a6359] hover:text-[#427898] px-3 py-2 text-sm font-medium transition-colors"
               >
                 Home
               </a>
@@ -101,26 +101,26 @@ const Navbar = () => {
                 <>
                   <a
                     href={userProfile?.accountType === 'brand' ? '/brand-dashboard' : '/dashboard'}
-                    className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors"
+                    className="text-[#4a6359] hover:text-[#995a90] px-3 py-2 text-sm font-medium transition-colors"
                   >
                     Dashboard
                   </a>
                   <a
                     href="/campaigns"
-                    className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors relative"
+                    className="text-[#4a6359] hover:text-[#995a90] px-3 py-2 text-sm font-medium transition-colors relative"
                   >
-                    🎁 Campaigns
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-2 h-2 animate-pulse"></span>
+                     Campaigns
+                    
                   </a>
                   <a
                     href="/feed"
-                    className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors"
+                    className="text-[#4a6359] hover:text-[#995a90] px-3 py-2 text-sm font-medium transition-colors"
                   >
                     Feed
                   </a>
                   <a
                     href="/communities"
-                    className="text-[#4a6359] hover:text-[#a56b8a] px-3 py-2 text-sm font-medium transition-colors"
+                    className="text-[#4a6359] hover:text-[#995a90] px-3 py-2 text-sm font-medium transition-colors"
                   >
                     Communities
                   </a>
@@ -134,7 +134,7 @@ const Navbar = () => {
               {!isConnected ? (
                 <button
                   onClick={connectWallet}
-                  className="bg-[#4a6359] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#3d5248] transition-all"
+                  className="bg-[#427898] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#995a90] transition-all"
                 >
                   Connect Wallet
                 </button>
@@ -142,7 +142,7 @@ const Navbar = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="bg-[#d4a960] text-[#4a6359] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#c99a50] transition-all flex items-center gap-2"
+                    className="bg-[#d4a960] text-[#4a6359] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#995a90] transition-all flex items-center gap-2"
                   >
                     <svg
                       className="w-5 h-5"
@@ -176,7 +176,7 @@ const Navbar = () => {
               {!user ? (
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="bg-[#a56b8a] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#8e5a75] transition-all"
+                  className="bg-[#427898] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#995a90] transition-all"
                 >
                   Sign In / Sign Up
                 </button>
@@ -184,7 +184,7 @@ const Navbar = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="bg-[#a56b8a] text-white p-2 rounded-full hover:bg-[#8e5a75] transition-all"
+                    className="bg-[#427898] text-white p-2 rounded-full hover:bg-[#995a90] transition-all"
                   >
                     <svg
                       className="w-6 h-6"
@@ -219,7 +219,7 @@ const Navbar = () => {
 
             {/* Mobile menu button */}
             <div className="md:hidden">
-              <button className="text-[#4a6359] hover:text-[#a56b8a]">
+              <button className="text-[#4a6359] hover:text-[#427898]">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -252,7 +252,7 @@ const Navbar = () => {
                   setIsAuthModalOpen(false);
                   setError('');
                 }}
-                className="text-[#4a6359] hover:text-[#a56b8a]"
+                className="text-[#4a6359] hover:text-[#427898]"
               >
                 <svg
                   className="h-6 w-6"
@@ -285,7 +285,7 @@ const Navbar = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                  className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#427898]"
                   placeholder="Enter your email"
                   required
                 />
@@ -299,7 +299,7 @@ const Navbar = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                  className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#427898]"
                   placeholder="Enter your password"
                   required
                 />
@@ -315,7 +315,7 @@ const Navbar = () => {
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a56b8a]"
+                      className="w-full px-4 py-2 border border-[#4a6359] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#427898]"
                       placeholder="Confirm your password"
                       required
                     />
@@ -348,8 +348,8 @@ const Navbar = () => {
                         onClick={() => setAccountType('brand')}
                         className={`p-4 border-2 rounded-lg transition-all ${
                           accountType === 'brand'
-                            ? 'border-[#a56b8a] bg-[#a56b8a] bg-opacity-10'
-                            : 'border-gray-300 hover:border-[#a56b8a]'
+                            ? 'border-[#427898] bg-[#427898] bg-opacity-10'
+                            : 'border-gray-300 hover:border-[#427898]'
                         }`}
                       >
                         <div className="text-center">
@@ -367,7 +367,7 @@ const Navbar = () => {
 
               <button
                 type="submit"
-                className="w-full bg-[#a56b8a] text-white py-2 rounded-lg font-medium hover:bg-[#8e5a75] transition-all"
+                className="w-full bg-[#427898] text-white py-2 rounded-lg font-medium hover:bg-[#427898] transition-all"
               >
                 {isSignIn ? 'Sign In' : 'Sign Up'}
               </button>
@@ -379,7 +379,7 @@ const Navbar = () => {
                   setIsSignIn(!isSignIn);
                   setError('');
                 }}
-                className="text-sm text-[#4a6359] hover:text-[#a56b8a]"
+                className="text-sm text-[#4a6359] hover:text-[#427898]"
               >
                 {isSignIn
                   ? "Don't have an account? Sign Up"
