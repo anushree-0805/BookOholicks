@@ -88,7 +88,7 @@ const WalletConnect = () => {
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-[#4a6359] flex items-center gap-2">
+        <h3 className="text-lg font-bold text-[#427898] flex items-center gap-2">
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
@@ -126,27 +126,15 @@ const WalletConnect = () => {
             <p className="font-mono font-bold text-[#4a6359]">{shortenAddress(walletAddress)}</p>
           </div>
 
-          {!isCorrectNetwork ? (
-            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Wrong network. Please switch to U2U Testnet.</span>
-                <button
-                  onClick={switchNetwork}
-                  className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
-                >
-                  Switch Network
-                </button>
-              </div>
-            </div>
-          ) : (
+          
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-sm text-[#6b7f75]">Connected to U2U Testnet</span>
             </div>
-          )}
+        
 
           <div className="bg-[#f5f1e8] p-4 rounded-xl">
-            <h4 className="font-bold text-[#4a6359] mb-2">Benefits of Connecting</h4>
+            <h4 className="font-bold text-[#427898] mb-2">Benefits of Connecting</h4>
             <ul className="space-y-2 text-sm text-[#6b7f75]">
               <li className="flex items-start gap-2">
                 <svg className="w-4 h-4 text-[#a56b8a] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -177,7 +165,7 @@ const WalletConnect = () => {
 
           <button
             onClick={() => window.open('https://testnet.u2uscan.xyz/address/' + walletAddress, '_blank')}
-            className="w-full bg-[#4a6359] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#3d5248] transition-all"
+            className="w-full bg-[#427898] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#5eb1e1] transition-all"
           >
             View on U2U Explorer
           </button>

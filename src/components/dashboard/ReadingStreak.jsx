@@ -100,7 +100,7 @@ const ReadingStreak = () => {
         <div className="flex justify-end">
           <button
             onClick={() => setShowLogModal(true)}
-            className="bg-[#4a6359] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#3d5248] transition-colors flex items-center gap-2"
+            className="bg-[#427898] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#995a90] transition-colors flex items-center gap-2"
           >
             <BookOpen className="w-5 h-5" />
             Log Reading Session
@@ -199,8 +199,8 @@ const ReadingStreak = () => {
 
       {/* Log Reading Modal */}
       {showLogModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl border-2 border-black">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                 <BookOpen className="w-5 h-5" />
@@ -283,7 +283,7 @@ const ReadingStreak = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#4a6359] text-white py-3 rounded-lg font-medium hover:bg-[#3d5248] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#427898] text-white py-3 rounded-lg font-medium hover:bg-[#5eb1e1] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Logging...' : 'Log Reading Session'}
               </button>

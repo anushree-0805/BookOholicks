@@ -42,7 +42,7 @@ const Dashboard = () => {
               onClick={() => setActiveTab('overview')}
               className={`py-4 px-1 font-medium text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'overview'
-                  ? 'border-[#4a6359] text-[#4a6359]'
+                  ? 'border-[#4a6359] text-[#427898]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -53,7 +53,7 @@ const Dashboard = () => {
               onClick={() => setActiveTab('profile')}
               className={`py-4 px-1 font-medium text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'profile'
-                  ? 'border-[#4a6359] text-[#4a6359]'
+                  ? 'border-[#4a6359] text-[#427898]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -64,7 +64,7 @@ const Dashboard = () => {
               onClick={() => setActiveTab('streaks')}
               className={`py-4 px-1 font-medium text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'streaks'
-                  ? 'border-[#4a6359] text-[#4a6359]'
+                  ? 'border-[#4a6359] text-[#427898]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -75,7 +75,7 @@ const Dashboard = () => {
               onClick={() => setActiveTab('nfts')}
               className={`py-4 px-1 font-medium text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'nfts'
-                  ? 'border-[#4a6359] text-[#4a6359]'
+                  ? 'border-[#4a6359] text-[#427898]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -86,7 +86,7 @@ const Dashboard = () => {
               onClick={() => setActiveTab('shared-nfts')}
               className={`py-4 px-1 font-medium text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'shared-nfts'
-                  ? 'border-[#4a6359] text-[#4a6359]'
+                  ? 'border-[#4a6359] text-[#427898]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >

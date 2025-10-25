@@ -100,7 +100,7 @@ const MySharedNFTs = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#a56b8a] to-[#8e5a75] rounded-2xl p-6 text-white shadow-lg">
+      <div className="bg-[#427898] rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
